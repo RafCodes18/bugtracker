@@ -92,6 +92,7 @@
             background: var(--bg);
             line-height: 1.6;
             overflow-x: hidden;
+            max-width: 100vw;
         }
 
         body::before {
@@ -216,7 +217,7 @@
         }
 
         /* ===== SIDEBAR ===== */
-        .app-layout { display: flex; min-height: 100vh; }
+        .app-layout { display: flex; min-height: 100vh; width: 100%; overflow-x: hidden; }
 
         .sidebar {
             width: var(--sidebar-w);
@@ -345,7 +346,7 @@
         .av-tk { background: linear-gradient(135deg, rgba(251,191,36,0.15), rgba(255,79,106,0.15)); color: #fbbf24; border-color: rgba(251,191,36,0.25); }
 
         /* ===== MAIN ===== */
-        .main-content { margin-left: var(--sidebar-w); flex: 1; min-height: 100vh; }
+        .main-content { margin-left: var(--sidebar-w); flex: 1; min-height: 100vh; min-width: 0; max-width: 100%; overflow-x: hidden; }
 
         .page-header {
             height: var(--header-h);
@@ -360,6 +361,9 @@
             position: sticky;
             top: 0;
             z-index: 50;
+            width: 100%;
+            box-sizing: border-box;
+            overflow: hidden;
         }
 
         .page-header-left { display: flex; align-items: center; gap: 12px; }
@@ -1054,28 +1058,51 @@
             }
             .sidebar.open { transform: translateX(0); }
 
-            .main-content { margin-left: 0; }
+            /* Critical: on mobile the sidebar is out of flow (fixed),
+               so main-content must be exactly the viewport width */
+            .main-content {
+                margin-left: 0;
+                width: 100vw;
+                max-width: 100vw;
+                overflow-x: hidden;
+            }
+
             .mobile-menu { display: inline-flex; }
 
-            /* Header */
-            .page-header { padding: 0 14px; gap: 8px; }
+            /* Header — must not exceed viewport */
+            .page-header {
+                padding: 0 14px;
+                gap: 8px;
+                width: 100%;
+                max-width: 100vw;
+                box-sizing: border-box;
+            }
             .page-header h1 { font-size: 1.05rem; }
+            .page-header-left { min-width: 0; flex-shrink: 1; overflow: hidden; }
+            .page-actions { flex-shrink: 0; }
             .breadcrumb { display: none; }
-            .page-actions { gap: 6px; }
 
-            /* Page body — extra bottom padding for bottom nav */
-            .page-body { padding: 16px 14px 84px; }
+            /* Page body */
+            .page-body {
+                padding: 16px 14px 84px;
+                width: 100%;
+                max-width: 100vw;
+                box-sizing: border-box;
+                overflow-x: hidden;
+            }
 
             /* Stats 2-col */
             .stats-grid {
                 grid-template-columns: repeat(2, 1fr);
                 gap: 10px;
                 margin-bottom: 16px;
+                width: 100%;
             }
             .stat-card { padding: 14px 16px; }
             .stat-value { font-size: 2rem; }
 
-            /* Filter bar horizontal scroll strip */
+            /* Filter bar — contained horizontal scroll, must NOT cause page overflow.
+               The key is width:100% + overflow-x:auto on the container itself. */
             .filter-bar {
                 flex-wrap: nowrap;
                 overflow-x: auto;
@@ -1085,6 +1112,9 @@
                 padding-bottom: 4px;
                 scrollbar-width: none;
                 -ms-overflow-style: none;
+                width: 100%;
+                max-width: 100%;
+                box-sizing: border-box;
             }
             .filter-bar::-webkit-scrollbar { display: none; }
             .result-count { display: none; }
@@ -1093,7 +1123,7 @@
 
             /* Table hidden, card list shown */
             .table-wrap { display: none; }
-            .m-card-list { display: flex; }
+            .m-card-list { display: flex; width: 100%; }
 
             /* Detail panel stacked */
             .detail-grid {
