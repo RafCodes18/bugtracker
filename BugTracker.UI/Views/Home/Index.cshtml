@@ -1,8 +1,1735 @@
 ﻿@{
-    ViewData["Title"] = "Home Page";
+    Layout = null;
+    var appName = "BugTrack";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>@appName | Issue Tracking Dashboard</title>
+    <meta name="description" content="Track bugs, manage projects, assign tickets, review activity, and keep development work organized." />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700;800;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg: #080d1a;
+            --bg-soft: #0d1525;
+            --card: #0f1b30;
+            --card-light: #162035;
+            --glass: rgba(15, 27, 48, 0.85);
+            --text: #eef2ff;
+            --muted: #8896b3;
+            --accent: #4fffb0;
+            --accent-2: #4d9eff;
+            --accent-3: #b06eff;
+            --border: rgba(255, 255, 255, 0.08);
+            --border-strong: rgba(255, 255, 255, 0.15);
+            --shadow: 0 32px 80px rgba(0, 0, 0, 0.5);
+            --shadow-sm: 0 4px 20px rgba(0, 0, 0, 0.35);
+            --radius: 16px;
+            --radius-sm: 10px;
+            --danger: #ff4f6a;
+            --warning: #fbbf24;
+            --info: #4d9eff;
+            --success: #4fffb0;
+            --font-display: 'Syne', sans-serif;
+            --font-body: 'DM Sans', sans-serif;
+            --font-mono: 'DM Mono', monospace;
+            --max-width: 1120px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: var(--font-body);
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+            body::before {
+                content: '';
+                position: fixed;
+                inset: 0;
+                background: radial-gradient(ellipse 80% 50% at 10% 0%, rgba(77,158,255,0.12) 0%, transparent 60%), radial-gradient(ellipse 60% 40% at 90% 10%, rgba(79,255,176,0.08) 0%, transparent 50%), radial-gradient(ellipse 50% 60% at 60% 80%, rgba(176,110,255,0.06) 0%, transparent 50%);
+                pointer-events: none;
+                z-index: 0;
+            }
+
+            body > * {
+                position: relative;
+                z-index: 1;
+            }
+
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .container {
+            width: min(100% - 32px, var(--max-width));
+            margin: 0 auto;
+        }
+
+        /* ===== HEADER ===== */
+        header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(20px);
+            background: rgba(8, 13, 26, 0.85);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .nav {
+            min-height: 68px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 24px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-family: var(--font-display);
+            font-weight: 900;
+            letter-spacing: -0.05em;
+            font-size: 1.2rem;
+        }
+
+        .logo-mark {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            color: #030810;
+            border-radius: 9px;
+            display: grid;
+            place-items: center;
+            font-weight: 900;
+            font-size: 11px;
+            font-family: var(--font-display);
+            letter-spacing: -0.03em;
+            flex-shrink: 0;
+        }
+
+        .logo span {
+            color: var(--accent);
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+            .nav-links a {
+                color: var(--muted);
+                padding: 7px 12px;
+                border-radius: 8px;
+                transition: all 0.15s;
+            }
+
+                .nav-links a:hover {
+                    color: var(--text);
+                    background: rgba(255,255,255,0.05);
+                }
+
+        .mobile-toggle {
+            display: none;
+            border: 1px solid var(--border);
+            background: rgba(255,255,255,0.04);
+            color: var(--text);
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: var(--font-body);
+            font-size: 0.88rem;
+            font-weight: 600;
+        }
+
+        /* ===== BUTTONS ===== */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            padding: 11px 20px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-strong);
+            font-weight: 700;
+            font-family: var(--font-body);
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.18s ease;
+            white-space: nowrap;
+            background: rgba(255,255,255,0.04);
+            color: var(--text);
+            letter-spacing: -0.01em;
+        }
+
+            .btn:hover {
+                transform: translateY(-2px);
+                background: rgba(255,255,255,0.08);
+            }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            color: #030810;
+            border: none;
+            box-shadow: 0 0 28px rgba(79,255,176,0.2);
+            font-weight: 800;
+        }
+
+            .btn-primary:hover {
+                box-shadow: 0 0 40px rgba(79,255,176,0.32);
+                background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            }
+
+        /* ===== HERO ===== */
+        .hero {
+            padding: 96px 0 80px;
+        }
+
+        .hero-grid {
+            display: grid;
+            grid-template-columns: 1.1fr 0.9fr;
+            gap: 48px;
+            align-items: center;
+        }
+
+        .eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--accent);
+            border: 1px solid rgba(79, 255, 176, 0.22);
+            background: rgba(79, 255, 176, 0.07);
+            padding: 7px 14px;
+            border-radius: 999px;
+            font-size: 0.82rem;
+            font-weight: 700;
+            font-family: var(--font-mono);
+            margin-bottom: 22px;
+            letter-spacing: 0.01em;
+        }
+
+        .status-dot {
+            width: 7px;
+            height: 7px;
+            background: var(--accent);
+            border-radius: 50%;
+            box-shadow: 0 0 14px var(--accent);
+            animation: pulse 2s infinite;
+        }
+
+        @@keyframes pulse {
+            0%, 100% {
+                box-shadow: 0 0 8px var(--accent);
+            }
+
+            50% {
+                box-shadow: 0 0 20px var(--accent), 0 0 40px rgba(79,255,176,0.3);
+            }
+        }
+
+        h1 {
+            font-family: var(--font-display);
+            font-size: clamp(2.8rem, 6.5vw, 5rem);
+            line-height: 0.95;
+            letter-spacing: -0.07em;
+            margin-bottom: 22px;
+        }
+
+            h1 .line-accent {
+                color: var(--accent);
+            }
+
+        .hero p {
+            color: var(--muted);
+            font-size: 1.05rem;
+            max-width: 580px;
+            margin-bottom: 28px;
+            line-height: 1.7;
+        }
+
+        .highlight {
+            color: var(--text);
+            font-weight: 700;
+        }
+
+        .hero-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 28px;
+        }
+
+        /* ===== HERO CARD ===== */
+        .hero-card {
+            background: var(--glass);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(20px);
+            padding: 24px;
+            overflow: hidden;
+            position: relative;
+        }
+
+            .hero-card::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                right: 0;
+                width: 200px;
+                height: 200px;
+                background: radial-gradient(circle, rgba(79,255,176,0.06), transparent 70%);
+                pointer-events: none;
+            }
+
+        .hero-card-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 18px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .profile-badge {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            color: #030810;
+            display: grid;
+            place-items: center;
+            font-weight: 900;
+            font-size: 12px;
+            font-family: var(--font-display);
+            flex-shrink: 0;
+        }
+
+        .hero-card h2 {
+            font-family: var(--font-display);
+            font-size: 1rem;
+            letter-spacing: -0.03em;
+        }
+
+        .hero-card-subtitle {
+            font-size: 0.8rem;
+            color: var(--muted);
+            font-family: var(--font-mono);
+        }
+
+        .mini-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+
+        .mini-stat {
+            padding: 12px 14px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+        }
+
+        .mini-stat-val {
+            font-family: var(--font-display);
+            font-size: 1.6rem;
+            font-weight: 900;
+            letter-spacing: -0.06em;
+            line-height: 1;
+        }
+
+            .mini-stat-val.open {
+                color: var(--info);
+            }
+
+            .mini-stat-val.urgent {
+                color: var(--danger);
+            }
+
+            .mini-stat-val.progress {
+                color: var(--warning);
+            }
+
+            .mini-stat-val.resolved {
+                color: var(--success);
+            }
+
+        .mini-stat-label {
+            font-size: 10px;
+            color: var(--muted);
+            font-family: var(--font-mono);
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            margin-top: 3px;
+        }
+
+        .mini-tickets {
+            display: grid;
+            gap: 8px;
+        }
+
+        .mini-ticket {
+            padding: 10px 12px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .mini-ticket-title {
+            font-size: 11.5px;
+            font-weight: 600;
+            line-height: 1.3;
+            flex: 1;
+            min-width: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .mini-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 7px;
+            border-radius: 999px;
+            font-size: 10px;
+            font-weight: 700;
+            white-space: nowrap;
+            border: 1px solid transparent;
+            flex-shrink: 0;
+        }
+
+        .mb-high {
+            color: #fca5a5;
+            background: rgba(255,79,106,0.08);
+            border-color: rgba(255,79,106,0.18);
+        }
+
+        .mb-medium {
+            color: #fde68a;
+            background: rgba(251,191,36,0.1);
+            border-color: rgba(251,191,36,0.2);
+        }
+
+        .mb-low {
+            color: #86efac;
+            background: rgba(34,197,94,0.08);
+            border-color: rgba(34,197,94,0.18);
+        }
+
+        .mb-resolved {
+            color: #4fffb0;
+            background: rgba(79,255,176,0.08);
+            border-color: rgba(79,255,176,0.2);
+        }
+
+        /* ===== SECTION ===== */
+        section {
+            padding: 80px 0;
+        }
+
+        .section-heading {
+            margin-bottom: 32px;
+        }
+
+            .section-heading .tag {
+                display: inline-block;
+                color: var(--accent);
+                font-weight: 700;
+                font-size: 0.78rem;
+                font-family: var(--font-mono);
+                letter-spacing: 0.1em;
+                text-transform: uppercase;
+                margin-bottom: 10px;
+            }
+
+            .section-heading h2 {
+                font-family: var(--font-display);
+                font-size: clamp(2rem, 4vw, 2.9rem);
+                line-height: 1.05;
+                letter-spacing: -0.06em;
+            }
+
+            .section-heading p {
+                color: var(--muted);
+                max-width: 680px;
+                margin-top: 12px;
+                font-size: 1rem;
+            }
+
+        /* ===== APP PREVIEW ===== */
+        .app-preview {
+            background: var(--glass);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(20px);
+            overflow: hidden;
+        }
+
+        /* Preview top bar */
+        .preview-topbar {
+            height: 52px;
+            padding: 0 20px;
+            background: rgba(8,13,26,0.75);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+
+        .preview-topbar-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .preview-page-title {
+            font-family: var(--font-display);
+            font-size: 1rem;
+            font-weight: 900;
+            letter-spacing: -0.05em;
+        }
+
+        .preview-breadcrumb {
+            font-size: 11px;
+            color: var(--muted);
+            font-family: var(--font-mono);
+        }
+
+        .preview-topbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .preview-search-pill {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            padding: 6px 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: rgba(255,255,255,0.04);
+            font-size: 11px;
+            color: var(--muted);
+            font-family: var(--font-mono);
+            width: 180px;
+        }
+
+        .preview-btn-new {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 6px 12px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            color: #030810;
+            border-radius: 7px;
+            font-size: 11px;
+            font-weight: 700;
+            font-family: var(--font-body);
+            white-space: nowrap;
+        }
+
+        /* Preview layout */
+        .preview-layout {
+            display: grid;
+            grid-template-columns: 200px 1fr;
+            min-height: 460px;
+        }
+
+        /* Preview sidebar */
+        .preview-sidebar {
+            background: rgba(8,13,26,0.92);
+            border-right: 1px solid var(--border);
+            padding: 12px 8px;
+        }
+
+        .preview-sidebar-logo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 10px 14px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 10px;
+        }
+
+        .ps-logo-mark {
+            width: 26px;
+            height: 26px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            color: #030810;
+            border-radius: 7px;
+            display: grid;
+            place-items: center;
+            font-weight: 900;
+            font-size: 8px;
+            font-family: var(--font-display);
+        }
+
+        .ps-logo-text {
+            font-family: var(--font-display);
+            font-weight: 900;
+            font-size: 0.85rem;
+            letter-spacing: -0.05em;
+        }
+
+            .ps-logo-text span {
+                color: var(--accent);
+            }
+
+        .ps-section-label {
+            font-size: 8.5px;
+            font-weight: 700;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            padding: 8px 10px 4px;
+            font-family: var(--font-mono);
+        }
+
+        .ps-nav-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 7px;
+            padding: 7px 10px;
+            border-radius: 8px;
+            font-size: 11.5px;
+            font-weight: 600;
+            color: var(--muted);
+            margin-bottom: 2px;
+            font-family: var(--font-body);
+        }
+
+            .ps-nav-item.active {
+                background: linear-gradient(135deg, var(--accent), var(--accent-2));
+                color: #030810;
+                font-weight: 700;
+            }
+
+        .ps-nav-item-left {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+        }
+
+        .ps-nav-badge {
+            background: rgba(255,79,106,0.85);
+            color: #fff;
+            border-radius: 999px;
+            padding: 1px 6px;
+            font-size: 9px;
+            font-weight: 700;
+            font-family: var(--font-mono);
+            min-width: 18px;
+            text-align: center;
+        }
+
+        .ps-nav-item.active .ps-nav-badge {
+            background: rgba(3,8,16,0.25);
+            color: #030810;
+        }
+
+        .ps-user-block {
+            margin-top: auto;
+            padding: 8px 10px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: rgba(255,255,255,0.04);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .ps-avatar {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(79,255,176,0.15), rgba(77,158,255,0.15));
+            color: var(--accent);
+            border: 1px solid rgba(79,255,176,0.25);
+            display: grid;
+            place-items: center;
+            font-size: 9px;
+            font-weight: 700;
+            font-family: var(--font-mono);
+        }
+
+        .ps-user-name {
+            font-size: 10.5px;
+            font-weight: 700;
+        }
+
+        .ps-user-role {
+            font-size: 9.5px;
+            color: var(--muted);
+            font-family: var(--font-mono);
+        }
+
+        /* Preview main */
+        .preview-main {
+            padding: 14px;
+            overflow: hidden;
+        }
+
+        /* Stats row */
+        .preview-stats-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .preview-stat-card {
+            padding: 12px 14px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+        }
+
+        .psc-label {
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            font-family: var(--font-mono);
+        }
+
+        .psc-value {
+            font-family: var(--font-display);
+            font-size: 1.7rem;
+            font-weight: 900;
+            letter-spacing: -0.07em;
+            line-height: 1;
+            margin-top: 3px;
+        }
+
+        .psc-sub {
+            font-size: 9.5px;
+            color: var(--muted);
+            margin-top: 3px;
+        }
+
+        .psc-up {
+            color: var(--success);
+            font-weight: 700;
+        }
+
+        .psc-down {
+            color: var(--danger);
+            font-weight: 700;
+        }
+
+        /* Filter bar */
+        .preview-filter-bar {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+
+        .preview-filter-pill {
+            padding: 5px 10px;
+            border: 1px solid var(--border);
+            border-radius: 7px;
+            font-size: 10.5px;
+            color: var(--muted);
+            background: rgba(255,255,255,0.04);
+            font-family: var(--font-body);
+            font-weight: 500;
+        }
+
+        .preview-result-count {
+            margin-left: auto;
+            font-size: 10px;
+            color: var(--muted);
+            font-family: var(--font-mono);
+        }
+
+        /* Table */
+        .preview-table-wrap {
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            background: rgba(255,255,255,0.02);
+        }
+
+        .preview-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+            .preview-table thead th {
+                padding: 8px 12px;
+                text-align: left;
+                font-size: 9px;
+                font-weight: 700;
+                color: var(--muted);
+                background: rgba(255,255,255,0.025);
+                border-bottom: 1px solid var(--border);
+                text-transform: uppercase;
+                letter-spacing: 0.08em;
+                font-family: var(--font-mono);
+            }
+
+            .preview-table tbody td {
+                padding: 9px 12px;
+                border-bottom: 1px solid var(--border);
+                font-size: 11px;
+                vertical-align: middle;
+            }
+
+            .preview-table tbody tr:last-child td {
+                border-bottom: none;
+            }
+
+            .preview-table tbody tr:first-child {
+                background: rgba(79,255,176,0.03);
+            }
+
+        .pt-id {
+            font-family: var(--font-mono);
+            color: var(--muted);
+            font-size: 10px;
+        }
+
+        .pt-title {
+            font-weight: 600;
+            color: var(--text);
+            font-size: 11px;
+        }
+
+        .preview-table tbody tr:first-child .pt-title {
+            color: var(--accent);
+        }
+
+        .pt-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 7px;
+            border-radius: 999px;
+            font-size: 9.5px;
+            font-weight: 600;
+            border: 1px solid transparent;
+            white-space: nowrap;
+        }
+
+            .pt-badge::before {
+                content: '';
+                width: 4px;
+                height: 4px;
+                border-radius: 50%;
+                background: currentColor;
+                opacity: 0.7;
+            }
+
+        .ptb-open {
+            color: #93c5fd;
+            background: rgba(96,165,250,0.1);
+            border-color: rgba(96,165,250,0.2);
+        }
+
+        .ptb-progress {
+            color: #fde68a;
+            background: rgba(251,191,36,0.1);
+            border-color: rgba(251,191,36,0.2);
+        }
+
+        .ptb-review {
+            color: #c4b5fd;
+            background: rgba(167,139,250,0.1);
+            border-color: rgba(167,139,250,0.2);
+        }
+
+        .ptb-resolved {
+            color: #4fffb0;
+            background: rgba(79,255,176,0.08);
+            border-color: rgba(79,255,176,0.2);
+        }
+
+        .ptb-critical {
+            color: #fca5a5;
+            background: rgba(255,79,106,0.12);
+            border-color: rgba(255,79,106,0.25);
+        }
+
+        .ptb-high {
+            color: #fca5a5;
+            background: rgba(255,79,106,0.08);
+            border-color: rgba(255,79,106,0.18);
+        }
+
+        .ptb-medium {
+            color: #fde68a;
+            background: rgba(251,191,36,0.1);
+            border-color: rgba(251,191,36,0.2);
+        }
+
+        .ptb-low {
+            color: #86efac;
+            background: rgba(34,197,94,0.08);
+            border-color: rgba(34,197,94,0.18);
+        }
+
+        .ptb-bug {
+            color: #e879f9;
+            background: rgba(232,121,249,0.1);
+            border-color: rgba(232,121,249,0.2);
+        }
+
+        .ptb-feature {
+            color: #93c5fd;
+            background: rgba(96,165,250,0.1);
+            border-color: rgba(96,165,250,0.2);
+        }
+
+        .ptb-task {
+            color: var(--muted);
+            background: rgba(255,255,255,0.04);
+            border-color: var(--border);
+        }
+
+        .pt-assignee {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .pt-avatar {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: grid;
+            place-items: center;
+            font-size: 7.5px;
+            font-weight: 700;
+            font-family: var(--font-mono);
+            border: 1px solid transparent;
+            flex-shrink: 0;
+        }
+
+        .av-rp {
+            background: rgba(79,255,176,0.15);
+            color: var(--accent);
+            border-color: rgba(79,255,176,0.25);
+        }
+
+        .av-mc {
+            background: rgba(77,158,255,0.15);
+            color: var(--accent-2);
+            border-color: rgba(77,158,255,0.25);
+        }
+
+        .av-sp {
+            background: rgba(176,110,255,0.15);
+            color: var(--accent-3);
+            border-color: rgba(176,110,255,0.25);
+        }
+
+        .av-tk {
+            background: rgba(251,191,36,0.15);
+            color: #fbbf24;
+            border-color: rgba(251,191,36,0.25);
+        }
+
+        .pt-updated {
+            font-family: var(--font-mono);
+            font-size: 9.5px;
+            color: var(--muted);
+        }
+
+        /* ===== GRID LAYOUTS ===== */
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+
+        /* ===== CARDS ===== */
+        .card {
+            background: var(--glass);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 22px;
+            backdrop-filter: blur(20px);
+            box-shadow: var(--shadow-sm);
+            transition: all 0.2s ease;
+        }
+
+            .card:hover {
+                transform: translateY(-3px);
+                border-color: rgba(79,255,176,0.2);
+                box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+            }
+
+            .card h3 {
+                font-family: var(--font-display);
+                font-size: 1.05rem;
+                letter-spacing: -0.04em;
+                margin-bottom: 8px;
+            }
+
+            .card p {
+                color: var(--muted);
+                font-size: 0.92rem;
+                line-height: 1.65;
+            }
+
+        .card-tag {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--accent);
+            font-family: var(--font-mono);
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            margin-bottom: 8px;
+        }
+
+        .skill-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 7px;
+            margin-top: 14px;
+        }
+
+        .pill {
+            border: 1px solid var(--border);
+            background: rgba(255,255,255,0.04);
+            color: var(--text);
+            padding: 5px 11px;
+            border-radius: 999px;
+            font-size: 0.82rem;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        /* ===== WORKFLOW ===== */
+        .workflow {
+            display: grid;
+            gap: 20px;
+        }
+
+        .workflow-item {
+            position: relative;
+            padding-left: 24px;
+            border-left: 2px solid rgba(79,255,176,0.2);
+        }
+
+            .workflow-item::before {
+                content: "";
+                position: absolute;
+                left: -7px;
+                top: 5px;
+                width: 12px;
+                height: 12px;
+                border-radius: 50%;
+                background: var(--accent);
+                box-shadow: 0 0 14px rgba(79,255,176,0.5);
+            }
+
+            .workflow-item h3 {
+                font-family: var(--font-display);
+                font-size: 1.05rem;
+                letter-spacing: -0.04em;
+                margin-bottom: 3px;
+            }
+
+        .workflow-meta {
+            font-family: var(--font-mono);
+            color: var(--accent);
+            font-weight: 600;
+            font-size: 0.8rem;
+            margin-bottom: 6px;
+        }
+
+        .workflow-item p {
+            color: var(--muted);
+            font-size: 0.92rem;
+        }
+
+        /* ===== CTA ===== */
+        .contact-box {
+            background: linear-gradient(135deg, rgba(79,255,176,0.07), rgba(77,158,255,0.07)), var(--glass);
+            border: 1px solid var(--border-strong);
+            border-radius: 24px;
+            padding: 56px 36px;
+            text-align: center;
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(20px);
+            position: relative;
+            overflow: hidden;
+        }
+
+            .contact-box::before {
+                content: '';
+                position: absolute;
+                top: -40%;
+                left: 50%;
+                transform: translateX(-50%);
+                width: 600px;
+                height: 300px;
+                background: radial-gradient(ellipse, rgba(79,255,176,0.06), transparent 70%);
+                pointer-events: none;
+            }
+
+            .contact-box h2 {
+                font-family: var(--font-display);
+                font-size: clamp(2rem, 5vw, 3.2rem);
+                letter-spacing: -0.07em;
+                line-height: 1;
+                margin-bottom: 14px;
+            }
+
+            .contact-box p {
+                color: var(--muted);
+                max-width: 580px;
+                margin: 0 auto 28px;
+                font-size: 1rem;
+            }
+
+        /* ===== FOOTER ===== */
+        footer {
+            border-top: 1px solid var(--border);
+            color: var(--muted);
+            padding: 28px 0;
+            text-align: center;
+            font-size: 0.86rem;
+            font-family: var(--font-mono);
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @@media (max-width: 1050px) {
+            .preview-stats-row {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .preview-search-pill {
+                display: none;
+            }
+        }
+
+        @@media (max-width: 950px) {
+            .hero-grid,
+            .grid-2,
+            .grid-3 {
+                grid-template-columns: 1fr;
+            }
+
+            .preview-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .preview-sidebar {
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+            }
+
+            .preview-sidebar-logo, .ps-section-label, .ps-nav-item:not(.active), .ps-user-block {
+                display: none;
+            }
+
+            .preview-sidebar {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                padding: 10px 12px;
+                flex-wrap: wrap;
+            }
+
+            .ps-nav-item.active {
+                display: flex;
+            }
+        }
+
+        @@media (max-width: 850px) {
+            .nav-links {
+                position: absolute;
+                top: 68px;
+                left: 16px;
+                right: 16px;
+                flex-direction: column;
+                align-items: stretch;
+                background: var(--bg-soft);
+                border: 1px solid var(--border);
+                border-radius: 14px;
+                padding: 12px;
+                display: none;
+                z-index: 200;
+            }
+
+                .nav-links.open {
+                    display: flex;
+                }
+
+            .mobile-toggle {
+                display: inline-flex;
+            }
+
+            .hero {
+                padding-top: 60px;
+            }
+
+            .hero-actions .btn {
+                flex: 1 1 auto;
+            }
+        }
+
+        @@media (max-width: 640px) {
+            .preview-stats-row {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .preview-topbar-actions .preview-btn-new {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <div class="container nav">
+            <a href="#top" class="logo">
+                <div class="logo-mark">BT</div>
+                @appName<span>.</span>
+            </a>
+
+            <nav class="nav-links" id="navLinks">
+                <a href="#dashboard">Dashboard</a>
+                <a href="#features">Features</a>
+                <a href="#workflow">Workflow</a>
+                <a href="#stack">Stack</a>
+                <a href="#start">Get Started</a>
+            </nav>
+
+            <button class="mobile-toggle" id="mobileToggle" type="button">Menu</button>
+        </div>
+    </header>
+
+    <main id="top">
+        <!-- ===== HERO ===== -->
+        <section class="hero">
+            <div class="container hero-grid">
+                <div>
+                    <div class="eyebrow">
+                        <span class="status-dot"></span>
+                        Portfolio project · Rafael Parra
+                    </div>
+
+                    <h1>Bug tracking<br>built with<br><span class="line-accent">.NET skills.</span></h1>
+
+                    <p>
+                        <span class="highlight">@appName</span> is a full-stack issue tracking app demonstrating
+                        <span class="highlight">ASP.NET MVC, C#, SQL Server, authentication, CRUD workflows, role-based access,</span>
+                        and clean UI development — built to feel like a real internal tool.
+                    </p>
+
+                    <div class="hero-actions">
+                        <a class="btn btn-primary" asp-controller="Auth" asp-action="LiveDemo">
+                            View Live Demo
+                        </a>
+                        <a class="btn" asp-controller="Auth" asp-action="Login">
+                            Demo Login
+                        </a>
+                        <a class="btn" href="https://github.com/RafCodes18/bugtracker" target="_blank" rel="noopener">GitHub</a>
+                    </div>
+                </div>
+
+                <aside class="hero-card">
+                    <div class="hero-card-header">
+                        <div class="profile-badge">BT</div>
+                        <div>
+                            <h2>Current Sprint</h2>
+                            <div class="hero-card-subtitle">Active · Product Release Board</div>
+                        </div>
+                    </div>
+
+                    <div class="mini-stats">
+                        <div class="mini-stat">
+                            <div class="mini-stat-val open">24</div>
+                            <div class="mini-stat-label">Open</div>
+                        </div>
+                        <div class="mini-stat">
+                            <div class="mini-stat-val urgent">6</div>
+                            <div class="mini-stat-label">Urgent</div>
+                        </div>
+                        <div class="mini-stat">
+                            <div class="mini-stat-val progress">9</div>
+                            <div class="mini-stat-label">In Progress</div>
+                        </div>
+                        <div class="mini-stat">
+                            <div class="mini-stat-val resolved">12</div>
+                            <div class="mini-stat-label">Resolved</div>
+                        </div>
+                    </div>
+
+                    <div class="mini-tickets">
+                        <div class="mini-ticket">
+                            <span class="mini-ticket-title">Login timeout not clearing session data</span>
+                            <span class="mini-badge mb-high">High</span>
+                        </div>
+                        <div class="mini-ticket">
+                            <span class="mini-ticket-title">Null reference on report generation</span>
+                            <span class="mini-badge mb-high">Critical</span>
+                        </div>
+                        <div class="mini-ticket">
+                            <span class="mini-ticket-title">Add pagination to user management</span>
+                            <span class="mini-badge mb-low">Low</span>
+                        </div>
+                        <div class="mini-ticket">
+                            <span class="mini-ticket-title">Ticket filter resets after status change</span>
+                            <span class="mini-badge mb-resolved">Resolved</span>
+                        </div>
+                    </div>
+                </aside>
+            </div>
+        </section>
+
+        <!-- ===== DASHBOARD PREVIEW ===== -->
+        <section id="dashboard">
+            <div class="container">
+                <div class="section-heading">
+                    <span class="tag">Dashboard</span>
+                    <h2>Everything important stays visible.</h2>
+                    <p>
+                        See what is open, what is blocked, who owns each ticket, and what changed most recently —
+                        all from a single, real-time board.
+                    </p>
+                </div>
+
+                <!-- Accurate replica of the actual Tickets page UI -->
+                <div class="app-preview">
+                    <!-- Header bar -->
+                    <div class="preview-topbar">
+                        <div class="preview-topbar-left">
+                            <div>
+                                <div class="preview-page-title">All Tickets</div>
+                                <div class="preview-breadcrumb">Projects / <span style="color:var(--text);">BugTrack</span></div>
+                            </div>
+                        </div>
+                        <div class="preview-topbar-actions">
+                            <div class="preview-search-pill">
+                                <svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" /></svg>
+                                Search tickets…
+                            </div>
+                            <div class="preview-btn-new">
+                                <svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
+                                New Ticket
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Body: sidebar + main -->
+                    <div class="preview-layout">
+                        <!-- Sidebar -->
+                        <aside class="preview-sidebar">
+                            <div class="preview-sidebar-logo">
+                                <div class="ps-logo-mark">BT</div>
+                                <div class="ps-logo-text">Bug<span>Track</span></div>
+                            </div>
+
+                            <div class="ps-section-label">Main</div>
+
+                            <div class="ps-nav-item" style="color:var(--muted);">
+                                <div class="ps-nav-item-left">
+                                    <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 11l9-8 9 8" /><path d="M5 10v10h14V10" /></svg>
+                                    Home
+                                </div>
+                            </div>
+
+                            <div class="ps-nav-item active">
+                                <div class="ps-nav-item-left">
+                                    <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
+                                    All Tickets
+                                </div>
+                                <span class="ps-nav-badge">18</span>
+                            </div>
+
+                            <div class="ps-nav-item">
+                                <div class="ps-nav-item-left">
+                                    <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" /><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" /></svg>
+                                    My Issues
+                                </div>
+                            </div>
+
+                            <div class="ps-section-label">Management</div>
+
+                            <div class="ps-nav-item">
+                                <div class="ps-nav-item-left">
+                                    <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="16" /><line x1="8" y1="12" x2="16" y2="12" /></svg>
+                                    New Ticket
+                                </div>
+                            </div>
+
+                            <div class="ps-nav-item">
+                                <div class="ps-nav-item-left">
+                                    <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" /><circle cx="9" cy="7" r="4" /></svg>
+                                    Users
+                                </div>
+                            </div>
+
+                            <div class="ps-section-label">Reports</div>
+
+                            <div class="ps-nav-item">
+                                <div class="ps-nav-item-left">
+                                    <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" /></svg>
+                                    Analytics
+                                </div>
+                            </div>
+
+                            <div class="ps-user-block">
+                                <div class="pt-avatar av-rp">RP</div>
+                                <div>
+                                    <div class="ps-user-name">Rafael Parra</div>
+                                    <div class="ps-user-role">Administrator</div>
+                                </div>
+                            </div>
+                        </aside>
+
+                        <!-- Main content -->
+                        <div class="preview-main">
+                            <!-- Stats row -->
+                            <div class="preview-stats-row">
+                                <div class="preview-stat-card">
+                                    <div class="psc-label">Open</div>
+                                    <div class="psc-value" style="color:var(--info);">24</div>
+                                    <div class="psc-sub"><span class="psc-up">▲ 3</span> from last week</div>
+                                </div>
+                                <div class="preview-stat-card">
+                                    <div class="psc-label">In Progress</div>
+                                    <div class="psc-value" style="color:var(--warning);">9</div>
+                                    <div class="psc-sub"><span class="psc-down">▼ 2</span> from last week</div>
+                                </div>
+                                <div class="preview-stat-card">
+                                    <div class="psc-label">High Priority</div>
+                                    <div class="psc-value" style="color:var(--danger);">6</div>
+                                    <div class="psc-sub">Needs attention</div>
+                                </div>
+                                <div class="preview-stat-card">
+                                    <div class="psc-label">Resolved</div>
+                                    <div class="psc-value" style="color:var(--success);">12</div>
+                                    <div class="psc-sub"><span class="psc-up">▲ 12</span> this month</div>
+                                </div>
+                            </div>
+
+                            <!-- Filter bar -->
+                            <div class="preview-filter-bar">
+                                <div class="preview-filter-pill">All Statuses</div>
+                                <div class="preview-filter-pill">All Priorities</div>
+                                <div class="preview-filter-pill">All Types</div>
+                                <div class="preview-filter-pill">All Assignees</div>
+                                <span class="preview-result-count">6 tickets</span>
+                            </div>
+
+                            <!-- Table -->
+                            <div class="preview-table-wrap">
+                                <table class="preview-table">
+                                    <thead>
+                                        <tr>
+                                            <th style="width:54px;">ID</th>
+                                            <th>Title</th>
+                                            <th style="width:68px;">Type</th>
+                                            <th style="width:90px;">Status</th>
+                                            <th style="width:80px;">Priority</th>
+                                            <th style="width:110px;">Assignee</th>
+                                            <th style="width:72px;">Updated</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td class="pt-id">#1048</td>
+                                            <td class="pt-title">Login timeout not clearing session data</td>
+                                            <td><span class="pt-badge ptb-bug">Bug</span></td>
+                                            <td><span class="pt-badge ptb-open">Open</span></td>
+                                            <td><span class="pt-badge ptb-high">High</span></td>
+                                            <td><div class="pt-assignee"><div class="pt-avatar av-tk">TK</div><span style="font-size:10.5px;">T. Kowalski</span></div></td>
+                                            <td class="pt-updated">Today</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="pt-id">#1047</td>
+                                            <td class="pt-title">Export CSV button unresponsive on reports page</td>
+                                            <td><span class="pt-badge ptb-bug">Bug</span></td>
+                                            <td><span class="pt-badge ptb-progress">In Progress</span></td>
+                                            <td><span class="pt-badge ptb-medium">Medium</span></td>
+                                            <td><div class="pt-assignee"><div class="pt-avatar av-rp">RP</div><span style="font-size:10.5px;">Rafael Parra</span></div></td>
+                                            <td class="pt-updated">Today</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="pt-id">#1046</td>
+                                            <td class="pt-title">Add pagination to user management grid</td>
+                                            <td><span class="pt-badge ptb-feature">Feature</span></td>
+                                            <td><span class="pt-badge ptb-review">Review</span></td>
+                                            <td><span class="pt-badge ptb-low">Low</span></td>
+                                            <td><div class="pt-assignee"><div class="pt-avatar av-mc">MC</div><span style="font-size:10.5px;">M. Chen</span></div></td>
+                                            <td class="pt-updated">Yesterday</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="pt-id">#1045</td>
+                                            <td class="pt-title">Null reference on report generation</td>
+                                            <td><span class="pt-badge ptb-bug">Bug</span></td>
+                                            <td><span class="pt-badge ptb-open">Open</span></td>
+                                            <td><span class="pt-badge ptb-critical">Critical</span></td>
+                                            <td><div class="pt-assignee"><div class="pt-avatar av-rp">RP</div><span style="font-size:10.5px;">Rafael Parra</span></div></td>
+                                            <td class="pt-updated">Yesterday</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="pt-id">#1044</td>
+                                            <td class="pt-title">Add dark mode toggle to settings</td>
+                                            <td><span class="pt-badge ptb-task">Task</span></td>
+                                            <td><span class="pt-badge ptb-resolved">Resolved</span></td>
+                                            <td><span class="pt-badge ptb-low">Low</span></td>
+                                            <td><div class="pt-assignee"><div class="pt-avatar av-sp">SP</div><span style="font-size:10.5px;">S. Patel</span></div></td>
+                                            <td class="pt-updated">2 days ago</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===== FEATURES ===== -->
+        <section id="features">
+            <div class="container">
+                <div class="section-heading">
+                    <span class="tag">Features</span>
+                    <h2>Built for the day-to-day flow of fixing software.</h2>
+                    <p>
+                        Report issues, assign owners, discuss fixes, update progress, and keep the whole team aligned.
+                    </p>
+                </div>
+
+                <div class="grid-3">
+                    <div class="card">
+                        <p class="card-tag">Tickets</p>
+                        <h3>Create and manage bugs</h3>
+                        <p>Add clear issue details, reproduction steps, priority, project, assignee, and current status.</p>
+                        <div class="skill-list">
+                            <span class="pill">Bug Reports</span>
+                            <span class="pill">Priority</span>
+                            <span class="pill">Status</span>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <p class="card-tag">Projects</p>
+                        <h3>Group work by product</h3>
+                        <p>Keep tickets organized by project so teams can focus on the right backlog without the noise.</p>
+                        <div class="skill-list">
+                            <span class="pill">Projects</span>
+                            <span class="pill">Backlog</span>
+                            <span class="pill">Sprints</span>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <p class="card-tag">Team</p>
+                        <h3>Assign clear ownership</h3>
+                        <p>Route tickets to the right person and make it obvious who is responsible for the next step.</p>
+                        <div class="skill-list">
+                            <span class="pill">Users</span>
+                            <span class="pill">Roles</span>
+                            <span class="pill">Assignees</span>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <p class="card-tag">Discussion</p>
+                        <h3>Comment on every ticket</h3>
+                        <p>Keep questions, decisions, screenshots, and fix notes attached to the issue they belong to.</p>
+                        <div class="skill-list">
+                            <span class="pill">Comments</span>
+                            <span class="pill">Updates</span>
+                            <span class="pill">Notes</span>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <p class="card-tag">Activity</p>
+                        <h3>See what changed</h3>
+                        <p>Track status changes, priority changes, assignments, and new comments as tickets move forward.</p>
+                        <div class="skill-list">
+                            <span class="pill">History</span>
+                            <span class="pill">Audit Trail</span>
+                            <span class="pill">Timeline</span>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <p class="card-tag">Reports</p>
+                        <h3>Measure progress</h3>
+                        <p>Review open tickets, resolved bugs, overdue work, and high-priority items from one dashboard.</p>
+                        <div class="skill-list">
+                            <span class="pill">Dashboard</span>
+                            <span class="pill">Metrics</span>
+                            <span class="pill">Reports</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===== WORKFLOW ===== -->
+        <section id="workflow">
+            <div class="container">
+                <div class="section-heading">
+                    <span class="tag">Workflow</span>
+                    <h2>A simple path from bug report to resolution.</h2>
+                    <p>
+                        Every issue moves through a clear lifecycle, so the team always knows what needs attention.
+                    </p>
+                </div>
+
+                <div class="workflow">
+                    <div class="workflow-item">
+                        <h3>Report</h3>
+                        <div class="workflow-meta">New ticket created</div>
+                        <p>A user adds the issue, selects the project, sets a priority, and includes the details needed to reproduce it.</p>
+                    </div>
+
+                    <div class="workflow-item">
+                        <h3>Assign</h3>
+                        <div class="workflow-meta">Owner selected</div>
+                        <p>The ticket is assigned to a developer, designer, tester, or project owner.</p>
+                    </div>
+
+                    <div class="workflow-item">
+                        <h3>Fix</h3>
+                        <div class="workflow-meta">Work in progress</div>
+                        <p>The team discusses the issue, updates the status, and records progress as the fix moves forward.</p>
+                    </div>
+
+                    <div class="workflow-item">
+                        <h3>Review</h3>
+                        <div class="workflow-meta">Ready to verify</div>
+                        <p>The completed fix is reviewed, tested, and either reopened or marked resolved.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===== STACK ===== -->
+        <section id="stack">
+            <div class="container">
+                <div class="section-heading">
+                    <span class="tag">Stack</span>
+                    <h2>Fast, familiar, and easy to maintain.</h2>
+                    <p>
+                        A straightforward web app stack with server-rendered pages, relational data, and clean frontend interactions.
+                    </p>
+                </div>
+
+                <div class="grid-2">
+                    <div class="card">
+                        <h3>Backend</h3>
+                        <div class="skill-list">
+                            <span class="pill">C#</span>
+                            <span class="pill">ASP.NET MVC</span>
+                            <span class="pill">SQL Server</span>
+                            <span class="pill">Entity Framework</span>
+                            <span class="pill">Controllers</span>
+                            <span class="pill">View Models</span>
+                            <span class="pill">Validation</span>
+                            <span class="pill">Authentication</span>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h3>Frontend</h3>
+                        <div class="skill-list">
+                            <span class="pill">Razor Views</span>
+                            <span class="pill">HTML</span>
+                            <span class="pill">CSS</span>
+                            <span class="pill">JavaScript</span>
+                            <span class="pill">Responsive Layout</span>
+                            <span class="pill">Dashboard UI</span>
+                            <span class="pill">Forms</span>
+                            <span class="pill">Filters</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===== CTA ===== -->
+        <section id="start">
+            <div class="container">
+                <div class="contact-box">
+                    <h2>Open the board and start tracking.</h2>
+                    <p>
+                        Jump into the dashboard, review active issues, create a new ticket, or sign in to manage assigned work.
+                    </p>
+
+                    <div class="hero-actions" style="justify-content: center;">
+                        <a class="btn btn-primary" href="/Tickets">View Tickets</a>
+                        <a class="btn" href="/Auth/Login">Demo Login</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            &copy; <span id="year"></span> @appName — Built by Rafael Parra
+        </div>
+    </footer>
+
+    <script>
+        const mobileToggle = document.getElementById("mobileToggle");
+        const navLinks = document.getElementById("navLinks");
+
+        document.getElementById("year").textContent = new Date().getFullYear();
+
+        mobileToggle.addEventListener("click", function () {
+            navLinks.classList.toggle("open");
+        });
+
+        navLinks.querySelectorAll("a").forEach(function (link) {
+            link.addEventListener("click", function () {
+                navLinks.classList.remove("open");
+            });
+        });
+    </script>
+</body>
+</html>

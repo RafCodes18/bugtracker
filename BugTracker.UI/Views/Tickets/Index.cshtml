@@ -1,0 +1,2102 @@
+﻿@using System.Text.Json
+@using Microsoft.AspNetCore.Http
+@model List<BugTracker.UI.Models.Ticket>
+
+@functions {
+    string RelativeTime(DateTime date)
+    {
+        var diff = DateTime.UtcNow - date;
+
+        if (diff.TotalMinutes < 2) return "Just now";
+        if (diff.TotalHours < 24) return "Today";
+        if (diff.TotalDays < 2) return "Yesterday";
+        return $"{Math.Floor(diff.TotalDays)} days ago";
+    }
+}
+
+@{
+    Layout = null;
+
+    var ticketsJson = JsonSerializer.Serialize(Model.Select(t => new
+    {
+        dbId = t.Id,
+        id = $"#{1000 + t.Id}",
+        title = t.Title,
+        description = t.Description,
+        type = t.Type,
+        status = t.Status,
+        priority = t.Priority,
+        assignee = t.Assignee,
+        initials = t.Initials,
+        avClass = t.AvatarClass,
+        updated = RelativeTime(t.UpdatedAt),
+        activity = t.Activities
+            .OrderBy(a => a.CreatedAt)
+            .Select(a => a.Message)
+            .ToList()
+    }));
+
+    var currentUserName = Context.Session.GetString("DemoUserName") ?? "Rafael Parra";
+    var currentUserRole = Context.Session.GetString("DemoUserRole") ?? "Administrator";
+    var currentUserInitials = Context.Session.GetString("DemoUserInitials") ?? "RP";
+    var currentUserAvatarClass = Context.Session.GetString("DemoUserAvatarClass") ?? "av-rp";
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tickets | BugTrack</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700;800;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg: #080d1a;
+            --bg-soft: #0d1525;
+            --card: #0f1b30;
+            --card-light: #162035;
+            --glass: rgba(15, 27, 48, 0.85);
+            --text: #eef2ff;
+            --muted: #8896b3;
+            --faint: rgba(255,255,255,0.04);
+            --accent: #4fffb0;
+            --accent-2: #4d9eff;
+            --accent-3: #b06eff;
+            --border: rgba(255,255,255,0.08);
+            --border-strong: rgba(255,255,255,0.15);
+            --shadow: 0 32px 80px rgba(0,0,0,0.5);
+            --shadow-sm: 0 4px 20px rgba(0,0,0,0.35);
+            --radius: 16px;
+            --radius-sm: 10px;
+            --sidebar-w: 248px;
+            --header-h: 64px;
+            --success: #4fffb0;
+            --warning: #fbbf24;
+            --danger: #ff4f6a;
+            --info: #4d9eff;
+            --purple: #b06eff;
+            --font-display: 'Syne', sans-serif;
+            --font-body: 'DM Sans', sans-serif;
+            --font-mono: 'DM Mono', monospace;
+        }
+
+        html, body {
+            min-height: 100%;
+            font-family: var(--font-body);
+            font-size: 14px;
+            color: var(--text);
+            background: var(--bg);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Animated background */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse 80% 50% at 10% 0%, rgba(77,158,255,0.12) 0%, transparent 60%),
+                radial-gradient(ellipse 60% 40% at 90% 10%, rgba(79,255,176,0.08) 0%, transparent 50%),
+                radial-gradient(ellipse 50% 60% at 60% 80%, rgba(176,110,255,0.06) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        body > * { position: relative; z-index: 1; }
+
+        a { color: inherit; text-decoration: none; }
+        button, input, select, textarea { font: inherit; }
+
+        /* ===== UTILITIES ===== */
+        .hidden { display: none !important; }
+        .truncate { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .text-muted { color: var(--muted); }
+
+        /* ===== SCROLLBAR ===== */
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 999px; }
+
+        /* ===== BUTTONS ===== */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            padding: 9px 16px;
+            border-radius: var(--radius-sm);
+            border: 1px solid transparent;
+            font-weight: 600;
+            font-family: var(--font-body);
+            cursor: pointer;
+            transition: all 0.18s ease;
+            white-space: nowrap;
+            background: transparent;
+            color: var(--text);
+            font-size: 13.5px;
+            letter-spacing: -0.01em;
+        }
+        .btn:hover { transform: translateY(-1px); }
+        .btn:active { transform: translateY(0); }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
+            color: #030810;
+            font-weight: 700;
+            border: none;
+            box-shadow: 0 0 24px rgba(79,255,176,0.18);
+        }
+        .btn-primary:hover { box-shadow: 0 0 32px rgba(79,255,176,0.28); }
+
+        .btn-secondary {
+            background: rgba(255,255,255,0.05);
+            color: var(--text);
+            border-color: var(--border-strong);
+        }
+        .btn-secondary:hover { background: rgba(255,255,255,0.09); border-color: rgba(255,255,255,0.22); }
+
+        .btn-danger {
+            background: rgba(255,79,106,0.12);
+            color: #ff7a92;
+            border-color: rgba(255,79,106,0.25);
+        }
+        .btn-danger:hover { background: rgba(255,79,106,0.2); }
+
+        .btn-ghost {
+            color: var(--muted);
+            border-color: transparent;
+            padding: 7px 10px;
+            border-radius: 8px;
+        }
+        .btn-ghost:hover { color: var(--text); background: rgba(255,255,255,0.06); }
+
+        .btn-sm { padding: 6px 12px; font-size: 12.5px; }
+        .btn-icon { padding: 7px; }
+        .btn:focus-visible { outline: 2px solid rgba(79,255,176,0.5); outline-offset: 2px; }
+
+        /* ===== BADGES ===== */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 3px 9px;
+            border-radius: 999px;
+            font-size: 11.5px;
+            font-weight: 600;
+            white-space: nowrap;
+            border: 1px solid transparent;
+            letter-spacing: 0.01em;
+        }
+        .badge::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: currentColor; opacity: 0.7; }
+
+        .badge-open { color: #93c5fd; background: rgba(96,165,250,0.1); border-color: rgba(96,165,250,0.2); }
+        .badge-progress { color: #fde68a; background: rgba(251,191,36,0.1); border-color: rgba(251,191,36,0.2); }
+        .badge-review { color: #c4b5fd; background: rgba(167,139,250,0.1); border-color: rgba(167,139,250,0.2); }
+        .badge-resolved { color: var(--accent); background: rgba(79,255,176,0.08); border-color: rgba(79,255,176,0.2); }
+        .badge-critical { color: #fca5a5; background: rgba(255,79,106,0.12); border-color: rgba(255,79,106,0.25); }
+        .badge-high { color: #fca5a5; background: rgba(255,79,106,0.08); border-color: rgba(255,79,106,0.18); }
+        .badge-medium { color: #fde68a; background: rgba(251,191,36,0.1); border-color: rgba(251,191,36,0.2); }
+        .badge-low { color: #86efac; background: rgba(34,197,94,0.08); border-color: rgba(34,197,94,0.18); }
+        .badge-bug { color: #e879f9; background: rgba(232,121,249,0.1); border-color: rgba(232,121,249,0.2); }
+        .badge-feature { color: #93c5fd; background: rgba(96,165,250,0.1); border-color: rgba(96,165,250,0.2); }
+        .badge-task { color: var(--muted); background: rgba(255,255,255,0.04); border-color: var(--border); }
+
+        /* ===== GLASS CARD ===== */
+        .card {
+            background: var(--glass);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            backdrop-filter: blur(20px);
+            box-shadow: var(--shadow-sm);
+        }
+
+        /* ===== SIDEBAR ===== */
+        .app-layout { display: flex; min-height: 100vh; }
+
+        .sidebar {
+            width: var(--sidebar-w);
+            background: rgba(8,13,26,0.92);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            top: 0; left: 0;
+            height: 100vh;
+            z-index: 100;
+            backdrop-filter: blur(24px);
+        }
+
+        .sidebar-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 18px 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .logo-mark {
+            width: 34px; height: 34px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            color: #030810;
+            border-radius: 10px;
+            display: grid;
+            place-items: center;
+            font-weight: 900;
+            font-size: 12px;
+            font-family: var(--font-display);
+            letter-spacing: -0.03em;
+            flex-shrink: 0;
+        }
+
+        .logo-text {
+            font-family: var(--font-display);
+            font-weight: 900;
+            letter-spacing: -0.05em;
+            font-size: 1.2rem;
+        }
+        .logo-text span { color: var(--accent); }
+
+        .sidebar-nav { flex: 1; padding: 12px 10px; overflow-y: auto; }
+
+        .nav-section-label {
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            padding: 10px 10px 5px;
+            font-family: var(--font-mono);
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 9px 11px;
+            border-radius: var(--radius-sm);
+            color: var(--muted);
+            font-size: 13.5px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            margin-bottom: 2px;
+            user-select: none;
+        }
+        .nav-item:hover { color: var(--text); background: rgba(255,255,255,0.05); }
+        .nav-item.active {
+            color: #030810;
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            font-weight: 700;
+        }
+        .nav-item svg { flex-shrink: 0; }
+
+        .nav-badge {
+            margin-left: auto;
+            background: rgba(255,79,106,0.85);
+            color: #fff;
+            border-radius: 999px;
+            padding: 1px 7px;
+            font-size: 10.5px;
+            font-weight: 700;
+            min-width: 20px;
+            text-align: center;
+            font-family: var(--font-mono);
+        }
+        .nav-item.active .nav-badge { background: rgba(3,8,16,0.25); color: #030810; }
+
+        button.nav-item { width: 100%; border: none; background: transparent; text-align: left; }
+
+        .sidebar-footer { padding: 12px; border-top: 1px solid var(--border); }
+
+        .user-block {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 9px 10px;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--border);
+        }
+
+        .avatar {
+            width: 32px; height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(79,255,176,0.15), rgba(77,158,255,0.15));
+            color: var(--accent);
+            border: 1px solid rgba(79,255,176,0.25);
+            display: grid;
+            place-items: center;
+            font-weight: 700;
+            font-size: 11px;
+            flex-shrink: 0;
+            font-family: var(--font-mono);
+        }
+        .avatar-sm { width: 26px; height: 26px; font-size: 10px; }
+
+        /* Distinct avatar colors */
+        .av-rp { background: linear-gradient(135deg, rgba(79,255,176,0.15), rgba(77,158,255,0.15)); color: var(--accent); border-color: rgba(79,255,176,0.25); }
+        .av-mc { background: linear-gradient(135deg, rgba(77,158,255,0.15), rgba(176,110,255,0.15)); color: var(--accent-2); border-color: rgba(77,158,255,0.25); }
+        .av-sp { background: linear-gradient(135deg, rgba(176,110,255,0.15), rgba(232,121,249,0.15)); color: var(--accent-3); border-color: rgba(176,110,255,0.25); }
+        .av-tk { background: linear-gradient(135deg, rgba(251,191,36,0.15), rgba(255,79,106,0.15)); color: #fbbf24; border-color: rgba(251,191,36,0.25); }
+
+        /* ===== MAIN ===== */
+        .main-content { margin-left: var(--sidebar-w); flex: 1; min-height: 100vh; }
+
+        .page-header {
+            height: var(--header-h);
+            padding: 0 28px;
+            background: rgba(8,13,26,0.75);
+            border-bottom: 1px solid var(--border);
+            backdrop-filter: blur(20px);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+
+        .page-header-left { display: flex; align-items: center; gap: 12px; }
+        .mobile-menu { display: none; }
+
+        .page-header h1 {
+            font-size: 1.2rem;
+            font-weight: 900;
+            letter-spacing: -0.05em;
+            font-family: var(--font-display);
+        }
+
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: var(--muted);
+            margin-top: 1px;
+        }
+        .breadcrumb span { color: var(--text); font-weight: 600; }
+
+        .page-actions { display: flex; align-items: center; gap: 10px; }
+        .page-body { padding: 24px 28px; }
+
+        /* ===== SEARCH ===== */
+        .search-bar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 8px 12px;
+            width: 300px;
+            transition: all 0.15s ease;
+        }
+        .search-bar:focus-within {
+            border-color: rgba(79,255,176,0.4);
+            box-shadow: 0 0 0 3px rgba(79,255,176,0.07);
+            background: rgba(255,255,255,0.06);
+        }
+        .search-bar input { border: none; outline: none; background: transparent; color: var(--text); width: 100%; }
+        .search-bar input::placeholder { color: var(--muted); }
+
+        /* ===== STATS ===== */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 14px;
+            margin-bottom: 22px;
+        }
+
+        .stat-card {
+            background: var(--glass);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 18px 20px;
+            backdrop-filter: blur(20px);
+            position: relative;
+            overflow: hidden;
+            transition: border-color 0.2s ease;
+        }
+        .stat-card:hover { border-color: var(--border-strong); }
+       
+        .stat-card:nth-child(1)::after { background: var(--info); }
+        .stat-card:nth-child(2)::after { background: var(--warning); }
+        .stat-card:nth-child(3)::after { background: var(--danger); }
+        .stat-card:nth-child(4)::after { background: var(--success); }
+
+        .stat-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            font-family: var(--font-mono);
+        }
+        .stat-value {
+            font-size: 2.4rem;
+            font-weight: 900;
+            letter-spacing: -0.07em;
+            line-height: 1;
+            margin-top: 6px;
+            font-family: var(--font-display);
+        }
+        .stat-sub { font-size: 11.5px; color: var(--muted); margin-top: 5px; }
+        .stat-up { color: var(--success); font-weight: 700; }
+        .stat-down { color: var(--danger); font-weight: 700; }
+
+        /* ===== FILTER BAR ===== */
+        .filter-bar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 14px;
+        }
+
+        .filter-select {
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--text);
+            background: rgba(255,255,255,0.04);
+            cursor: pointer;
+            outline: none;
+            font-size: 13px;
+            font-family: var(--font-body);
+            transition: all 0.15s ease;
+        }
+        .filter-select:focus { border-color: rgba(79,255,176,0.4); }
+        .filter-select option { background: #0d1525; color: var(--text); }
+
+        .result-count {
+            margin-left: auto;
+            font-size: 12px;
+            color: var(--muted);
+            font-family: var(--font-mono);
+        }
+
+        /* ===== TABLE ===== */
+        .table-wrap {
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            box-shadow: var(--shadow-sm);
+        }
+
+        table { width: 100%; border-collapse: collapse; min-width: 900px; }
+
+        thead th {
+            padding: 11px 16px;
+            text-align: left;
+            font-size: 10.5px;
+            font-weight: 700;
+            color: var(--muted);
+            background: rgba(255,255,255,0.025);
+            border-bottom: 1px solid var(--border);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            font-family: var(--font-mono);
+        }
+
+        /* Sortable header */
+        thead th[data-sort] { cursor: pointer; user-select: none; }
+        thead th[data-sort]:hover { color: var(--text); }
+        thead th[data-sort]::after { content: ' ↕'; opacity: 0.35; }
+        thead th[data-sort].asc::after { content: ' ↑'; opacity: 1; color: var(--accent); }
+        thead th[data-sort].desc::after { content: ' ↓'; opacity: 1; color: var(--accent); }
+
+        tbody td { padding: 13px 16px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+        tbody tr:last-child td { border-bottom: none; }
+        tbody tr { transition: background 0.12s ease; cursor: pointer; }
+        tbody tr:hover { background: rgba(255,255,255,0.03); }
+        tbody tr.selected { background: rgba(79,255,176,0.04); }
+        tbody tr.selected td { border-bottom-color: rgba(79,255,176,0.08); }
+
+        .ticket-id {
+            font-family: var(--font-mono);
+            color: var(--muted);
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .ticket-title-link { color: var(--text); font-weight: 600; font-size: 13.5px; }
+        tbody tr:hover .ticket-title-link { color: var(--accent); }
+        tbody tr.selected .ticket-title-link { color: var(--accent); }
+
+        .row-actions {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            opacity: 0;
+            transition: opacity 0.15s;
+        }
+        tbody tr:hover .row-actions { opacity: 1; }
+
+        .empty-state {
+            padding: 48px 24px;
+            text-align: center;
+            color: var(--muted);
+            display: none;
+        }
+        .empty-state strong { color: var(--text); display: block; margin-bottom: 6px; font-size: 1rem; }
+        .empty-state svg { margin-bottom: 12px; opacity: 0.3; }
+
+        /* ===== DETAIL PANEL ===== */
+        .detail-grid {
+            display: grid;
+            grid-template-columns: 1.5fr 0.8fr;
+            gap: 16px;
+            margin-top: 18px;
+            align-items: start;
+        }
+
+        .detail-card { padding: 22px; }
+
+        .detail-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+
+        .detail-card h2 {
+            font-size: 1.25rem;
+            letter-spacing: -0.04em;
+            line-height: 1.25;
+            font-family: var(--font-display);
+            font-weight: 800;
+        }
+        .detail-card p { color: var(--muted); font-size: 13.5px; line-height: 1.65; }
+
+        .detail-meta {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 16px;
+        }
+
+        .detail-meta-item {
+            padding: 13px;
+            border: 1px solid var(--border);
+            background: rgba(255,255,255,0.03);
+            border-radius: 12px;
+            transition: border-color 0.15s;
+        }
+        .detail-meta-item:hover { border-color: var(--border-strong); }
+        .detail-meta-item strong {
+            display: block;
+            color: var(--muted);
+            font-size: 10.5px;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            font-family: var(--font-mono);
+            font-weight: 600;
+        }
+
+        .detail-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 18px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        /* ===== ACTIVITY ===== */
+        .activity-panel h3 {
+            font-size: 13.5px;
+            font-weight: 700;
+            margin-bottom: 4px;
+            font-family: var(--font-display);
+        }
+        .activity-panel p { font-size: 12px; color: var(--muted); }
+
+        .activity-list { margin-top: 14px; }
+
+        .activity-item {
+            display: flex;
+            gap: 10px;
+            padding: 11px 0;
+            border-bottom: 1px solid var(--border);
+            animation: fadeInUp 0.2s ease both;
+        }
+        .activity-item:last-child { border-bottom: none; }
+
+        @@keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .activity-dot {
+            width: 7px; height: 7px;
+            border-radius: 50%;
+            background: var(--accent);
+            margin-top: 5px;
+            flex-shrink: 0;
+            box-shadow: 0 0 10px rgba(79,255,176,0.5);
+        }
+
+        .activity-item h4 { font-size: 12.5px; font-weight: 600; margin-bottom: 2px; }
+        .activity-item span { color: var(--muted); font-size: 11px; font-family: var(--font-mono); }
+
+        /* Comment input in activity */
+        .comment-box {
+            margin-top: 14px;
+            padding-top: 14px;
+            border-top: 1px solid var(--border);
+        }
+        .comment-input-row {
+            display: flex;
+            gap: 8px;
+            align-items: flex-start;
+        }
+        .comment-textarea {
+            flex: 1;
+            border: 1px solid var(--border);
+            background: rgba(255,255,255,0.04);
+            color: var(--text);
+            border-radius: var(--radius-sm);
+            padding: 9px 12px;
+            outline: none;
+            font-family: var(--font-body);
+            font-size: 13px;
+            resize: none;
+            min-height: 38px;
+            transition: all 0.15s;
+        }
+        .comment-textarea:focus {
+            border-color: rgba(79,255,176,0.4);
+            min-height: 70px;
+        }
+        .comment-textarea::placeholder { color: var(--muted); }
+
+        /* ===== MODALS ===== */
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            z-index: 300;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(12px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .modal-backdrop.show { display: flex; animation: backdropIn 0.18s ease; }
+        @@keyframes backdropIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .modal-card {
+            width: min(100%, 620px);
+            background: rgba(13,21,37,0.98);
+            border: 1px solid var(--border-strong);
+            border-radius: 20px;
+            box-shadow: 0 48px 120px rgba(0,0,0,0.6);
+            overflow: hidden;
+            animation: modalIn 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        @@keyframes modalIn {
+            from { opacity: 0; transform: scale(0.94) translateY(12px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .modal-card.modal-sm { width: min(100%, 420px); }
+        .modal-card.modal-lg { width: min(100%, 680px); }
+
+        .modal-header {
+            padding: 18px 22px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+        .modal-header h2 {
+            font-size: 1.1rem;
+            letter-spacing: -0.04em;
+            font-family: var(--font-display);
+            font-weight: 800;
+        }
+        .modal-header-meta { display: flex; align-items: center; gap: 8px; }
+
+        .modal-body { padding: 20px 22px; display: grid; gap: 14px; }
+
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+        .form-group { display: grid; gap: 5px; }
+
+        .form-label {
+            color: var(--muted);
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            font-family: var(--font-mono);
+        }
+
+        .form-control {
+            width: 100%;
+            border: 1px solid var(--border);
+            background: rgba(255,255,255,0.04);
+            color: var(--text);
+            border-radius: var(--radius-sm);
+            padding: 10px 12px;
+            outline: none;
+            font-family: var(--font-body);
+            font-size: 13.5px;
+            transition: all 0.15s ease;
+        }
+        .form-control:focus {
+            border-color: rgba(79,255,176,0.4);
+            box-shadow: 0 0 0 3px rgba(79,255,176,0.06);
+            background: rgba(255,255,255,0.06);
+        }
+        .form-control option { background: #0d1525; }
+        textarea.form-control { resize: vertical; min-height: 100px; }
+
+        .modal-actions {
+            padding: 16px 22px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        /* Delete modal */
+        .delete-icon {
+            width: 52px; height: 52px;
+            border-radius: 50%;
+            background: rgba(255,79,106,0.12);
+            border: 1px solid rgba(255,79,106,0.25);
+            display: grid;
+            place-items: center;
+            margin: 0 auto 14px;
+        }
+        .delete-modal-body { padding: 24px 22px; text-align: center; }
+        .delete-modal-body h3 { font-family: var(--font-display); font-size: 1.1rem; margin-bottom: 8px; }
+        .delete-modal-body p { color: var(--muted); font-size: 13px; }
+
+        /* Status change modal */
+        .status-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+        .status-option {
+            padding: 14px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.15s;
+            background: rgba(255,255,255,0.03);
+        }
+        .status-option:hover { border-color: var(--border-strong); background: rgba(255,255,255,0.06); }
+        .status-option.selected { border-color: rgba(79,255,176,0.4); background: rgba(79,255,176,0.06); }
+        .status-option .status-name { font-weight: 600; font-size: 13px; margin-top: 6px; }
+        .status-option .status-desc { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+
+        /* Keyboard shortcut badge */
+        .kbd {
+            display: inline-flex;
+            align-items: center;
+            padding: 1px 5px;
+            border: 1px solid var(--border-strong);
+            border-radius: 4px;
+            font-size: 10px;
+            font-family: var(--font-mono);
+            color: var(--muted);
+            background: rgba(255,255,255,0.04);
+        }
+
+        /* ===== TOAST ===== */
+        .toast-container {
+            position: fixed;
+            right: 20px; bottom: 20px;
+            z-index: 500;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            pointer-events: none;
+        }
+
+        .toast {
+            background: rgba(15,27,48,0.95);
+            border: 1px solid var(--border-strong);
+            color: var(--text);
+            padding: 12px 16px;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(20px);
+            font-size: 13.5px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            pointer-events: all;
+            transform: translateX(120%);
+            transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+            max-width: 320px;
+        }
+        .toast.show { transform: translateX(0); }
+        .toast.leaving { transform: translateX(120%); transition: transform 0.2s ease; }
+        .toast-icon { width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center; flex-shrink: 0; }
+        .toast-success .toast-icon { background: rgba(79,255,176,0.15); color: var(--accent); }
+        .toast-error .toast-icon { background: rgba(255,79,106,0.15); color: var(--danger); }
+        .toast-info .toast-icon { background: rgba(77,158,255,0.15); color: var(--info); }
+
+        /* ===== MOBILE BACKDROP ===== */
+        .mobile-backdrop {
+            position: fixed;
+            top: 0;
+            left: var(--sidebar-w); /* starts after the sidebar */
+            right: 0;
+            bottom: 0;
+            z-index: 90;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(6px);
+            display: none;
+        }
+        .mobile-backdrop.show { display: block; }
+
+        /* ===== RESPONSIVE ===== */
+        @@media (max-width: 1100px) {
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .detail-grid { grid-template-columns: 1fr; }
+            .search-bar { width: 240px; }
+        }
+
+        @@media (max-width: 860px) {
+            .sidebar { transform: translateX(-100%); transition: transform 0.22s ease; box-shadow: var(--shadow); }
+            .sidebar.open { transform: translateX(0); }
+            .main-content { margin-left: 0; }
+            .mobile-menu { display: inline-flex; }
+            .page-header { padding: 0 16px; }
+            .page-body { padding: 16px; }
+            .page-actions { gap: 8px; }
+            .search-bar { width: 200px; }
+        }
+
+        @@media (max-width: 640px) {
+            .stats-grid, .detail-meta, .form-row { grid-template-columns: 1fr; }
+            .page-actions .search-bar { display: none; }
+            .status-grid { grid-template-columns: 1fr; }
+        }
+
+        .user-link-card {
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+            .user-link-card:hover {
+                background: rgba(255,255,255,0.07);
+                border-color: var(--border-strong);
+            }
+
+            .user-link-card:focus-visible {
+                outline: 2px solid rgba(79,255,176,0.5);
+                outline-offset: 2px;
+            }
+    </style>
+</head>
+<body>
+
+<div class="mobile-backdrop" id="mobileBackdrop"></div>
+
+<div class="app-layout">
+    <!-- ===== SIDEBAR ===== -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-logo">
+            <div class="logo-mark">BT</div>
+            <div class="logo-text">Bug<span>Track</span></div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <div class="nav-section-label">Main</div>
+
+            <a class="nav-item" asp-action="Index" asp-controller="Home">
+                <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
+                Home
+            </a>
+
+                <button class="nav-item active" type="button" id="allTicketsBtn">
+                    <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
+                    All Tickets
+                    <span class="nav-badge" id="navTicketCount">0</span>
+                </button>
+                <button class="nav-item" type="button" id="myIssuesBtn">
+                    <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" /><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" /></svg>
+                    My Issues
+                </button>
+            <div class="nav-section-label">Management</div>
+
+            <button class="nav-item" type="button" id="openCreateModalSide">
+                <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                New Ticket
+            </button>
+  
+            <a class="nav-item" href="Tickets/Users">
+                <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/></svg>
+                Users
+            </a>
+
+            <div class="nav-section-label">Reports</div>
+
+            <a class="nav-item" asp-action="Index" asp-controller="Analytics">
+                <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                Analytics
+            </a>
+        </nav>
+
+            <div class="sidebar-footer">
+
+                <div class="user-block user-link-card"
+                     id="adminHomeLink"
+                     data-url="@Url.Action("Index", "Home")"
+                     role="link"
+                     tabindex="0"
+                     aria-label="Go to Tickets home">
+
+                    <div class="avatar @currentUserAvatarClass">@currentUserInitials</div>
+
+                    <div style="flex:1;min-width:0;">
+                        <div class="truncate" style="font-size:13px;font-weight:700;">@currentUserName</div>
+                        <div class="truncate" style="font-size:11px;color:var(--muted);font-family:var(--font-mono);">@currentUserRole</div>
+                    </div>
+
+                    <button class="btn btn-ghost btn-icon" title="Sign out" type="button" id="logoutBtn" onclick="event.stopPropagation();">
+                        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" />
+                            <polyline points="16 17 21 12 16 7" />
+                            <line x1="21" y1="12" x2="9" y2="12" />
+                        </svg>
+                    </button>
+
+                </div>
+
+            </div>
+    </aside>
+
+    <!-- ===== MAIN ===== -->
+    <main class="main-content">
+        <div class="page-header">
+            <div class="page-header-left">
+                <button class="btn btn-secondary btn-icon mobile-menu" id="mobileMenu" type="button">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                </button>
+                <div>
+                    <h1>All Tickets</h1>
+                    <div class="breadcrumb">Projects / <span>BugTrack</span></div>
+                </div>
+            </div>
+
+            <div class="page-actions">
+                <div class="search-bar">
+                    <svg width="13" height="13" fill="none" stroke="var(--muted)" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+                    <input id="topSearch" type="text" placeholder="Search tickets…" />
+                </div>
+
+                <button class="btn btn-secondary btn-sm" id="exportBtn" type="button">
+                    <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    Export
+                </button>
+
+                <button class="btn btn-primary btn-sm" id="openCreateModal" type="button">
+                    <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    New Ticket
+                </button>
+            </div>
+        </div>
+
+        <div class="page-body">
+            <!-- Stats -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Open</div>
+                    <div class="stat-value" style="color:var(--info);" id="openCount">0</div>
+                    <div class="stat-sub"><span class="stat-up">▲ 3</span> from last week</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">In Progress</div>
+                    <div class="stat-value" style="color:var(--warning);" id="progressCount">0</div>
+                    <div class="stat-sub"><span class="stat-down">▼ 2</span> from last week</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">High Priority</div>
+                    <div class="stat-value" style="color:var(--danger);" id="highCount">0</div>
+                    <div class="stat-sub">Needs attention</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Resolved</div>
+                    <div class="stat-value" style="color:var(--success);" id="resolvedCount">0</div>
+                    <div class="stat-sub"><span class="stat-up">▲ 12</span> this month</div>
+                </div>
+            </div>
+
+            <!-- Filter bar -->
+            <div class="filter-bar">
+                <select class="filter-select" id="statusFilter">
+                    <option value="">All Statuses</option>
+                    <option value="Open">Open</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Review">Review</option>
+                    <option value="Resolved">Resolved</option>
+                </select>
+                <select class="filter-select" id="priorityFilter">
+                    <option value="">All Priorities</option>
+                    <option value="Critical">Critical</option>
+                    <option value="High">High</option>
+                    <option value="Medium">Medium</option>
+                    <option value="Low">Low</option>
+                </select>
+                <select class="filter-select" id="typeFilter">
+                    <option value="">All Types</option>
+                    <option value="Bug">Bug</option>
+                    <option value="Feature">Feature</option>
+                    <option value="Task">Task</option>
+                </select>
+                <select class="filter-select" id="assigneeFilter">
+                    <option value="">All Assignees</option>
+                    <option value="Rafael Parra">Rafael Parra</option>
+                    <option value="M. Chen">M. Chen</option>
+                    <option value="S. Patel">S. Patel</option>
+                    <option value="T. Kowalski">T. Kowalski</option>
+                </select>
+                <button class="btn btn-ghost btn-sm" id="clearFilters" type="button">
+                    <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    Clear
+                </button>
+                <span class="result-count" id="resultCount"></span>
+            </div>
+
+            <!-- Table -->
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width:70px;" data-sort="id">ID</th>
+                            <th data-sort="title">Title</th>
+                            <th style="width:95px;" data-sort="type">Type</th>
+                            <th style="width:120px;" data-sort="status">Status</th>
+                            <th style="width:110px;" data-sort="priority">Priority</th>
+                            <th style="width:150px;">Assignee</th>
+                            <th style="width:100px;" data-sort="updated">Updated</th>
+                            <th style="width:80px;"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="ticketTableBody"></tbody>
+                </table>
+                <div class="empty-state" id="emptyState">
+                    <svg width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                    <strong>No tickets found</strong>
+                    Try adjusting your filters or create a new ticket.
+                </div>
+            </div>
+
+            <!-- Detail + Activity -->
+            <div class="detail-grid">
+                <section class="card detail-card" id="ticketDetail">
+                    <div style="color:var(--muted);font-size:13px;text-align:center;padding:20px 0;">
+                        Select a ticket to view details
+                    </div>
+                </section>
+                <aside class="card detail-card activity-panel">
+                    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px;">
+                        <h3>Activity</h3>
+                        <span style="font-size:11px;color:var(--muted);font-family:var(--font-mono);" id="activityTicketId">—</span>
+                    </div>
+                    <p id="activitySubtitle">Select a ticket to view updates.</p>
+                    <div class="activity-list" id="activityList"></div>
+                    <div class="comment-box" id="commentBox" style="display:none;">
+                        <div class="comment-input-row">
+                            <textarea class="comment-textarea" id="commentInput" placeholder="Add a comment…" rows="1"></textarea>
+                            <button class="btn btn-primary btn-sm btn-icon" id="submitComment" title="Post">
+                                <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                            </button>
+                        </div>
+                    </div>
+                </aside>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- ===== CREATE MODAL ===== -->
+<div class="modal-backdrop" id="createModal">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h2>Create Ticket</h2>
+            <button class="btn btn-ghost btn-sm" data-close="createModal">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                Close
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label class="form-label" for="createTitle">Title</label>
+                <input class="form-control" id="createTitle" type="text" placeholder="e.g. Login timeout not clearing session data" required />
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="createDescription">Description</label>
+                <textarea class="form-control" id="createDescription" placeholder="Describe the issue, expected behavior, steps to reproduce…" required></textarea>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label" for="createType">Type</label>
+                    <select class="form-control" id="createType">
+                        <option value="Bug">Bug</option>
+                        <option value="Feature">Feature</option>
+                        <option value="Task">Task</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="createStatus">Status</label>
+                    <select class="form-control" id="createStatus">
+                        <option value="Open">Open</option>
+                        <option value="In Progress">In Progress</option>
+                        <option value="Review">Review</option>
+                        <option value="Resolved">Resolved</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label" for="createPriority">Priority</label>
+                    <select class="form-control" id="createPriority">
+                        <option value="Critical">Critical</option>
+                        <option value="High">High</option>
+                        <option value="Medium" selected>Medium</option>
+                        <option value="Low">Low</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="createAssignee">Assignee</label>
+                    <select class="form-control" id="createAssignee">
+                        <option value="Rafael Parra">Rafael Parra</option>
+                        <option value="M. Chen">M. Chen</option>
+                        <option value="S. Patel">S. Patel</option>
+                        <option value="T. Kowalski">T. Kowalski</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="modal-actions">
+            <button class="btn btn-secondary" data-close="createModal">Cancel</button>
+            <button class="btn btn-primary" id="submitCreate">
+                <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Create Ticket
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ===== EDIT MODAL ===== -->
+<div class="modal-backdrop" id="editModal">
+    <div class="modal-card">
+        <div class="modal-header">
+            <div>
+                <h2>Edit Ticket</h2>
+                <div class="modal-header-meta">
+                    <span class="ticket-id" id="editModalId" style="font-family:var(--font-mono);font-size:12px;color:var(--muted);"></span>
+                </div>
+            </div>
+            <button class="btn btn-ghost btn-sm" data-close="editModal">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                Close
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label class="form-label" for="editTitle">Title</label>
+                <input class="form-control" id="editTitle" type="text" required />
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="editDescription">Description</label>
+                <textarea class="form-control" id="editDescription" required></textarea>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label" for="editType">Type</label>
+                    <select class="form-control" id="editType">
+                        <option value="Bug">Bug</option>
+                        <option value="Feature">Feature</option>
+                        <option value="Task">Task</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="editStatus">Status</label>
+                    <select class="form-control" id="editStatus">
+                        <option value="Open">Open</option>
+                        <option value="In Progress">In Progress</option>
+                        <option value="Review">Review</option>
+                        <option value="Resolved">Resolved</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label" for="editPriority">Priority</label>
+                    <select class="form-control" id="editPriority">
+                        <option value="Critical">Critical</option>
+                        <option value="High">High</option>
+                        <option value="Medium">Medium</option>
+                        <option value="Low">Low</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="editAssignee">Assignee</label>
+                    <select class="form-control" id="editAssignee">
+                        <option value="Rafael Parra">Rafael Parra</option>
+                        <option value="M. Chen">M. Chen</option>
+                        <option value="S. Patel">S. Patel</option>
+                        <option value="T. Kowalski">T. Kowalski</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="modal-actions">
+            <button class="btn btn-danger btn-sm" id="editDeleteBtn">
+                <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                Delete
+            </button>
+            <button class="btn btn-secondary" data-close="editModal">Cancel</button>
+            <button class="btn btn-primary" id="submitEdit">Save Changes</button>
+        </div>
+    </div>
+</div>
+
+<!-- ===== DELETE CONFIRM MODAL ===== -->
+<div class="modal-backdrop" id="deleteModal">
+    <div class="modal-card modal-sm">
+        <div class="delete-modal-body">
+            <div class="delete-icon">
+                <svg width="22" height="22" fill="none" stroke="#ff4f6a" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+            </div>
+            <h3>Delete Ticket</h3>
+            <p>Are you sure you want to delete <strong id="deleteTicketTitle" style="color:var(--text);"></strong>? This action cannot be undone.</p>
+        </div>
+        <div class="modal-actions" style="justify-content:center;gap:12px;">
+            <button class="btn btn-secondary" data-close="deleteModal">Cancel</button>
+            <button class="btn btn-danger" id="confirmDelete">
+                <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
+                Delete Ticket
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ===== STATUS CHANGE MODAL ===== -->
+<div class="modal-backdrop" id="statusModal">
+    <div class="modal-card modal-sm">
+        <div class="modal-header">
+            <h2>Change Status</h2>
+            <button class="btn btn-ghost btn-sm" data-close="statusModal">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        </div>
+        <div class="modal-body">
+            <p style="color:var(--muted);font-size:13px;margin-bottom:4px;">Select the new status for <strong id="statusModalTicketTitle" style="color:var(--text);"></strong></p>
+            <div class="status-grid" id="statusGrid">
+                <div class="status-option" data-value="Open">
+                    <span class="badge badge-open" style="font-size:12px;">Open</span>
+                    <div class="status-name">Open</div>
+                    <div class="status-desc">Newly reported, not yet assigned</div>
+                </div>
+                <div class="status-option" data-value="In Progress">
+                    <span class="badge badge-progress" style="font-size:12px;">In Progress</span>
+                    <div class="status-name">In Progress</div>
+                    <div class="status-desc">Actively being worked on</div>
+                </div>
+                <div class="status-option" data-value="Review">
+                    <span class="badge badge-review" style="font-size:12px;">Review</span>
+                    <div class="status-name">Review</div>
+                    <div class="status-desc">Awaiting code review or QA</div>
+                </div>
+                <div class="status-option" data-value="Resolved">
+                    <span class="badge badge-resolved" style="font-size:12px;">Resolved</span>
+                    <div class="status-name">Resolved</div>
+                    <div class="status-desc">Fixed and verified</div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-actions">
+            <button class="btn btn-secondary" data-close="statusModal">Cancel</button>
+            <button class="btn btn-primary" id="confirmStatusChange">Apply Status</button>
+        </div>
+    </div>
+</div>
+
+<!-- ===== COMMENT MODAL (full) ===== -->
+<div class="modal-backdrop" id="commentModal">
+    <div class="modal-card">
+        <div class="modal-header">
+            <div>
+                <h2>Add Comment</h2>
+                <span style="font-size:12px;color:var(--muted);font-family:var(--font-mono);" id="commentModalId"></span>
+            </div>
+            <button class="btn btn-ghost btn-sm" data-close="commentModal">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label class="form-label">Comment</label>
+                <textarea class="form-control" id="modalCommentText" placeholder="Write your comment here…" style="min-height:140px;"></textarea>
+            </div>
+        </div>
+        <div class="modal-actions">
+            <button class="btn btn-secondary" data-close="commentModal">Cancel</button>
+            <button class="btn btn-primary" id="submitModalComment">
+                <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                Post Comment
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ===== EXPORT MODAL ===== -->
+<div class="modal-backdrop" id="exportModal">
+    <div class="modal-card modal-sm">
+        <div class="modal-header">
+            <h2>Export Tickets</h2>
+            <button class="btn btn-ghost btn-sm" data-close="exportModal">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        </div>
+        <div class="modal-body" style="gap:10px;">
+            <p style="color:var(--muted);font-size:13px;">Choose your export format. <strong id="exportCount" style="color:var(--text);"></strong> ticket(s) will be exported based on current filters.</p>
+            <div class="form-group">
+                <label class="form-label">Format</label>
+                <select class="form-control" id="exportFormat">
+                    <option value="csv">CSV — Comma-separated values</option>
+                    <option value="json">JSON — Structured data</option>
+                    <option value="tsv">TSV — Tab-separated values</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Include Fields</label>
+                <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px;" id="exportFields">
+                    <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;"><input type="checkbox" checked value="id"> ID</label>
+                    <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;"><input type="checkbox" checked value="title"> Title</label>
+                    <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;"><input type="checkbox" checked value="status"> Status</label>
+                    <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;"><input type="checkbox" checked value="priority"> Priority</label>
+                    <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;"><input type="checkbox" checked value="type"> Type</label>
+                    <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;"><input type="checkbox" checked value="assignee"> Assignee</label>
+                    <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;"><input type="checkbox" checked value="description"> Description</label>
+                </div>
+            </div>
+        </div>
+        <div class="modal-actions">
+            <button class="btn btn-secondary" data-close="exportModal">Cancel</button>
+            <button class="btn btn-primary" id="confirmExport">
+                <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Download
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ===== TOAST CONTAINER ===== -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+// ========== DATA ==========
+        let tickets = @Html.Raw(ticketsJson);
+
+        let selectedTicketId = tickets.length ? tickets[0].id : null;
+        let editingTicketId = null;
+        let deletingTicketId = null;
+        let statusModalTicketId = null;
+        let commentModalTicketId = null;
+        let selectedStatus = null;
+        let sortCol = null;
+        let sortDir = 'asc';
+
+        const urls = {
+            create: '@Url.Action("Create", "Tickets")',
+            edit: '@Url.Action("Edit", "Tickets")',
+            delete: '@Url.Action("Delete", "Tickets")',
+            changeStatus: '@Url.Action("ChangeStatus", "Tickets")',
+            addComment: '@Url.Action("AddComment", "Tickets")'
+        };
+
+        async function postJson(url, data) {
+            const response = await fetch(url, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(data)
+            });
+
+            if (!response.ok) {
+                const message = await response.text();
+                throw new Error(message || "Request failed.");
+            }
+
+            return await response.json();
+        }
+
+
+const assigneeMap = {
+    "Rafael Parra": { initials: "RP", avClass: "av-rp" },
+    "M. Chen": { initials: "MC", avClass: "av-mc" },
+    "S. Patel": { initials: "SP", avClass: "av-sp" },
+    "T. Kowalski": { initials: "TK", avClass: "av-tk" }
+};
+
+// ========== HELPERS ==========
+function badgeClass(value) {
+    const map = { "in progress": "progress", "open": "open", "review": "review", "resolved": "resolved",
+        "critical": "critical", "high": "high", "medium": "medium", "low": "low",
+        "bug": "bug", "feature": "feature", "task": "task" };
+    return map[value.toLowerCase()] || "task";
+}
+
+function timeAgo() { return "Just now"; }
+
+// ========== TOAST ==========
+function toast(message, type = "success") {
+    const icons = {
+        success: `<svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>`,
+        error: `<svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`,
+        info: `<svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`
+    };
+    const el = document.createElement("div");
+    el.className = `toast toast-${type}`;
+    el.innerHTML = `<div class="toast-icon">${icons[type]}</div><span>${message}</span>`;
+    document.getElementById("toastContainer").appendChild(el);
+    requestAnimationFrame(() => { requestAnimationFrame(() => el.classList.add("show")); });
+    setTimeout(() => {
+        el.classList.add("leaving");
+        setTimeout(() => el.remove(), 300);
+    }, 3000);
+}
+
+// ========== MODALS ==========
+        document.getElementById("myIssuesBtn").addEventListener("click", () => {
+            document.getElementById("assigneeFilter").value = "Rafael Parra";
+            document.querySelectorAll(".nav-item").forEach(i => i.classList.remove("active"));
+            document.getElementById("myIssuesBtn").classList.add("active");
+
+            const firstMatch = tickets.find(t => t.assignee === "Rafael Parra");
+            if (firstMatch) selectedTicketId = firstMatch.id;
+
+            renderTickets();
+            closeMobileSidebar();
+        });
+        document.getElementById("allTicketsBtn").addEventListener("click", () => {
+            document.getElementById("assigneeFilter").value = "";
+            document.getElementById("topSearch").value = "";
+            document.getElementById("statusFilter").value = "";
+            document.getElementById("priorityFilter").value = "";
+            document.getElementById("typeFilter").value = "";
+            document.querySelectorAll(".nav-item").forEach(i => i.classList.remove("active"));
+            document.getElementById("allTicketsBtn").classList.add("active");
+            renderTickets();
+            closeMobileSidebar();
+        });
+function openModal(id) {
+    document.getElementById(id).classList.add("show");
+    document.body.style.overflow = "hidden";
+}
+function closeModal(id) {
+    document.getElementById(id).classList.remove("show");
+    document.body.style.overflow = "";
+}
+
+document.querySelectorAll("[data-close]").forEach(btn => {
+    btn.addEventListener("click", () => closeModal(btn.dataset.close));
+});
+
+document.querySelectorAll(".modal-backdrop").forEach(backdrop => {
+    backdrop.addEventListener("click", e => {
+        if (e.target === backdrop) closeModal(backdrop.id);
+    });
+});
+
+document.addEventListener("keydown", e => {
+    if (e.key === "Escape") {
+        document.querySelectorAll(".modal-backdrop.show").forEach(m => closeModal(m.id));
+        closeMobileSidebar();
+    }
+});
+
+// ========== FILTERS & SORT ==========
+function getFiltered() {
+    const search = document.getElementById("topSearch").value.trim().toLowerCase();
+    const status = document.getElementById("statusFilter").value;
+    const priority = document.getElementById("priorityFilter").value;
+    const type = document.getElementById("typeFilter").value;
+    const assignee = document.getElementById("assigneeFilter").value;
+
+    let list = tickets.filter(t => {
+        const hay = [t.id, t.title, t.description, t.type, t.status, t.priority, t.assignee].join(" ").toLowerCase();
+        return (!search || hay.includes(search))
+            && (!status || t.status === status)
+            && (!priority || t.priority === priority)
+            && (!type || t.type === type)
+            && (!assignee || t.assignee === assignee);
+    });
+
+    if (sortCol) {
+        list.sort((a, b) => {
+            const av = (a[sortCol] || "").toString().toLowerCase();
+            const bv = (b[sortCol] || "").toString().toLowerCase();
+            return sortDir === "asc" ? av.localeCompare(bv) : bv.localeCompare(av);
+        });
+    }
+
+    return list;
+}
+
+// ========== RENDER TABLE ==========
+function renderTickets() {
+    const filtered = getFiltered();
+    const tbody = document.getElementById("ticketTableBody");
+    tbody.innerHTML = "";
+
+    filtered.forEach(t => {
+        const row = document.createElement("tr");
+        if (t.id === selectedTicketId) row.classList.add("selected");
+        row.innerHTML = `
+            <td class="ticket-id">${t.id}</td>
+            <td><span class="ticket-title-link">${t.title}</span></td>
+            <td><span class="badge badge-${badgeClass(t.type)}">${t.type}</span></td>
+            <td><span class="badge badge-${badgeClass(t.status)}">${t.status}</span></td>
+            <td><span class="badge badge-${badgeClass(t.priority)}">${t.priority}</span></td>
+            <td>
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <div class="avatar avatar-sm ${t.avClass}">${t.initials}</div>
+                    <span style="font-size:13px;">${t.assignee}</span>
+                </div>
+            </td>
+            <td style="font-size:12px;color:var(--muted);font-family:var(--font-mono);">${t.updated}</td>
+            <td>
+                <div class="row-actions">
+                    <button class="btn btn-ghost btn-icon btn-sm edit-btn" data-id="${t.id}" title="Edit" type="button">
+                        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"/></svg>
+                    </button>
+                    <button class="btn btn-ghost btn-icon btn-sm delete-row-btn" data-id="${t.id}" title="Delete" type="button" style="color:var(--danger);opacity:0.7;">
+                        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
+                    </button>
+                </div>
+            </td>
+        `;
+        row.addEventListener("click", e => {
+            if (e.target.closest(".edit-btn") || e.target.closest(".delete-row-btn")) return;
+            selectedTicketId = t.id;
+            renderTickets();
+            renderDetail(t);
+        });
+        tbody.appendChild(row);
+    });
+
+    document.getElementById("emptyState").style.display = filtered.length ? "none" : "block";
+    document.getElementById("resultCount").textContent = `${filtered.length} ticket${filtered.length !== 1 ? "s" : ""}`;
+    document.getElementById("navTicketCount").textContent = tickets.filter(t => t.status !== "Resolved").length;
+
+    updateStats();
+
+    // Re-bind edit / delete row buttons
+    document.querySelectorAll(".edit-btn").forEach(btn => {
+        btn.addEventListener("click", e => { e.stopPropagation(); openEditModal(btn.dataset.id); });
+    });
+    document.querySelectorAll(".delete-row-btn").forEach(btn => {
+        btn.addEventListener("click", e => { e.stopPropagation(); openDeleteModal(btn.dataset.id); });
+    });
+
+    // Auto-select
+    const selected = tickets.find(t => t.id === selectedTicketId) || filtered[0];
+    if (selected) renderDetail(selected);
+}
+
+// ========== STATS ==========
+function updateStats() {
+    document.getElementById("openCount").textContent = tickets.filter(t => t.status === "Open").length;
+    document.getElementById("progressCount").textContent = tickets.filter(t => t.status === "In Progress").length;
+    document.getElementById("highCount").textContent = tickets.filter(t => (t.priority === "High" || t.priority === "Critical") && t.status !== "Resolved").length;
+    document.getElementById("resolvedCount").textContent = tickets.filter(t => t.status === "Resolved").length;
+}
+
+// ========== SORT ==========
+document.querySelectorAll("thead th[data-sort]").forEach(th => {
+    th.addEventListener("click", () => {
+        const col = th.dataset.sort;
+        if (sortCol === col) { sortDir = sortDir === "asc" ? "desc" : "asc"; }
+        else { sortCol = col; sortDir = "asc"; }
+        document.querySelectorAll("thead th[data-sort]").forEach(h => h.classList.remove("asc","desc"));
+        th.classList.add(sortDir);
+        renderTickets();
+    });
+});
+
+// ========== DETAIL PANEL ==========
+function renderDetail(t) {
+    document.getElementById("ticketDetail").innerHTML = `
+        <div class="detail-header">
+            <div>
+                <div class="ticket-id" style="font-family:var(--font-mono);font-size:11.5px;margin-bottom:5px;">${t.id}</div>
+                <h2>${t.title}</h2>
+            </div>
+            <span class="badge badge-${badgeClass(t.priority)}" style="flex-shrink:0;">${t.priority}</span>
+        </div>
+        <p>${t.description}</p>
+        <div class="detail-meta">
+            <div class="detail-meta-item">
+                <strong>Type</strong>
+                <span class="badge badge-${badgeClass(t.type)}">${t.type}</span>
+            </div>
+            <div class="detail-meta-item" style="cursor:pointer;" onclick="openStatusModal('${t.id}')">
+                <strong>Status <svg width="9" height="9" fill="none" stroke="var(--muted)" stroke-width="2" viewBox="0 0 24 24" style="vertical-align:middle;"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></strong>
+                <span class="badge badge-${badgeClass(t.status)}">${t.status}</span>
+            </div>
+            <div class="detail-meta-item">
+                <strong>Assignee</strong>
+                <div style="display:flex;align-items:center;gap:7px;margin-top:2px;">
+                    <div class="avatar avatar-sm ${t.avClass}">${t.initials}</div>
+                    <span style="font-size:13px;">${t.assignee}</span>
+                </div>
+            </div>
+            <div class="detail-meta-item">
+                <strong>Updated</strong>
+                <span style="font-family:var(--font-mono);font-size:12px;">${t.updated}</span>
+            </div>
+        </div>
+        <div class="detail-actions">
+            <button class="btn btn-primary btn-sm" onclick="openEditModal('${t.id}')">
+                <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"/></svg>
+                Edit
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="openStatusModal('${t.id}')">
+                <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 014-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>
+                Status
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="openCommentModal('${t.id}')">
+                <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+                Comment
+            </button>
+            <button class="btn btn-danger btn-sm" onclick="openDeleteModal('${t.id}')">
+                <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
+                Delete
+            </button>
+        </div>
+    `;
+
+    document.getElementById("activityTicketId").textContent = t.id;
+    document.getElementById("activitySubtitle").textContent = "";
+    document.getElementById("commentBox").style.display = "block";
+
+    const list = document.getElementById("activityList");
+    list.innerHTML = t.activity.map((item, i) => `
+        <div class="activity-item" style="animation-delay:${i * 0.04}s">
+            <div class="activity-dot"></div>
+            <div>
+                <h4>${item}</h4>
+                <span>${t.updated}</span>
+            </div>
+        </div>
+    `).join("");
+}
+
+// ========== CREATE TICKET ==========
+function openCreateModal() {
+    document.getElementById("createTitle").value = "";
+    document.getElementById("createDescription").value = "";
+    document.getElementById("createType").value = "Bug";
+    document.getElementById("createStatus").value = "Open";
+    document.getElementById("createPriority").value = "Medium";
+    document.getElementById("createAssignee").value = "Rafael Parra";
+    openModal("createModal");
+    setTimeout(() => document.getElementById("createTitle").focus(), 80);
+}
+
+document.getElementById("openCreateModal").addEventListener("click", openCreateModal);
+document.getElementById("openCreateModalSide").addEventListener("click", openCreateModal);
+
+        document.getElementById("submitCreate").addEventListener("click", async () => {
+            const title = document.getElementById("createTitle").value.trim();
+            const desc = document.getElementById("createDescription").value.trim();
+
+            if (!title || !desc) {
+                toast("Please fill in all required fields.", "error");
+                return;
+            }
+
+            try {
+                const saved = await postJson(urls.create, {
+                    title: title,
+                    description: desc,
+                    type: document.getElementById("createType").value,
+                    status: document.getElementById("createStatus").value,
+                    priority: document.getElementById("createPriority").value,
+                    assignee: document.getElementById("createAssignee").value
+                });
+
+                tickets.unshift(saved);
+                selectedTicketId = saved.id;
+
+                closeModal("createModal");
+                renderTickets();
+
+                toast("Ticket created and saved to database.", "success");
+            } catch (err) {
+                toast(err.message || "Could not create ticket.", "error");
+            }
+        });
+
+// ========== EDIT TICKET ==========
+function openEditModal(id) {
+    const t = tickets.find(x => x.id === id);
+    if (!t) return;
+    editingTicketId = id;
+
+    document.getElementById("editModalId").textContent = t.id;
+    document.getElementById("editTitle").value = t.title;
+    document.getElementById("editDescription").value = t.description;
+    document.getElementById("editType").value = t.type;
+    document.getElementById("editStatus").value = t.status;
+    document.getElementById("editPriority").value = t.priority;
+    document.getElementById("editAssignee").value = t.assignee;
+
+    openModal("editModal");
+    setTimeout(() => document.getElementById("editTitle").focus(), 80);
+}
+        document.getElementById("submitEdit").addEventListener("click", async () => {
+            const ticket = tickets.find(t => t.id === editingTicketId);
+
+            if (!ticket) {
+                toast("Ticket not found.", "error");
+                return;
+            }
+
+            const title = document.getElementById("editTitle").value.trim();
+            const desc = document.getElementById("editDescription").value.trim();
+
+            if (!title || !desc) {
+                toast("Please fill in all required fields.", "error");
+                return;
+            }
+
+            try {
+                const saved = await postJson(urls.edit, {
+                    id: ticket.dbId,
+                    title: title,
+                    description: desc,
+                    type: document.getElementById("editType").value,
+                    status: document.getElementById("editStatus").value,
+                    priority: document.getElementById("editPriority").value,
+                    assignee: document.getElementById("editAssignee").value
+                });
+
+                const index = tickets.findIndex(t => t.dbId === saved.dbId);
+                if (index >= 0) tickets[index] = saved;
+
+                selectedTicketId = saved.id;
+                editingTicketId = null;
+
+                closeModal("editModal");
+                renderTickets();
+
+                toast("Ticket changes saved to database.", "success");
+            } catch (err) {
+                toast(err.message || "Could not save changes.", "error");
+            }
+        });
+
+document.getElementById("editDeleteBtn").addEventListener("click", () => {
+    closeModal("editModal");
+    openDeleteModal(editingTicketId);
+});
+
+// ========== DELETE TICKET ==========
+function openDeleteModal(id) {
+    const t = tickets.find(x => x.id === id);
+    if (!t) return;
+    deletingTicketId = id;
+    document.getElementById("deleteTicketTitle").textContent = t.title;
+    openModal("deleteModal");
+}
+
+        document.getElementById("confirmDelete").addEventListener("click", async () => {
+            const ticket = tickets.find(t => t.id === deletingTicketId);
+
+            if (!ticket) {
+                closeModal("deleteModal");
+                return;
+            }
+
+            try {
+                await postJson(urls.delete, {
+                    id: ticket.dbId
+                });
+
+                tickets = tickets.filter(t => t.id !== deletingTicketId);
+
+                selectedTicketId = tickets.length ? tickets[0].id : null;
+                deletingTicketId = null;
+
+                closeModal("deleteModal");
+                renderTickets();
+
+                toast("Ticket deleted from database.", "success");
+            } catch (err) {
+                toast(err.message || "Could not delete ticket.", "error");
+            }
+        });
+
+// ========== STATUS MODAL ==========
+function openStatusModal(id) {
+    const t = tickets.find(x => x.id === id);
+    if (!t) return;
+    statusModalTicketId = id;
+    selectedStatus = t.status;
+    document.getElementById("statusModalTicketTitle").textContent = t.title;
+
+    document.querySelectorAll(".status-option").forEach(opt => {
+        opt.classList.toggle("selected", opt.dataset.value === t.status);
+    });
+
+    openModal("statusModal");
+}
+
+document.querySelectorAll(".status-option").forEach(opt => {
+    opt.addEventListener("click", () => {
+        selectedStatus = opt.dataset.value;
+        document.querySelectorAll(".status-option").forEach(o => o.classList.remove("selected"));
+        opt.classList.add("selected");
+    });
+});
+        document.getElementById("confirmStatusChange").addEventListener("click", async () => {
+            const ticket = tickets.find(t => t.id === statusModalTicketId);
+
+            if (!ticket || !selectedStatus) {
+                closeModal("statusModal");
+                return;
+            }
+
+            try {
+                const saved = await postJson(urls.changeStatus, {
+                    id: ticket.dbId,
+                    status: selectedStatus
+                });
+
+                const index = tickets.findIndex(t => t.dbId === saved.dbId);
+                if (index >= 0) tickets[index] = saved;
+
+                selectedTicketId = saved.id;
+                statusModalTicketId = null;
+                selectedStatus = null;
+
+                closeModal("statusModal");
+                renderTickets();
+
+                toast("Status saved to database.", "success");
+            } catch (err) {
+                toast(err.message || "Could not update status.", "error");
+            }
+        });
+
+// ========== COMMENT (inline) ==========
+        document.getElementById("submitComment").addEventListener("click", async () => {
+            const input = document.getElementById("commentInput");
+            const comment = input.value.trim();
+
+            if (!comment) {
+                toast("Comment cannot be empty.", "error");
+                return;
+            }
+
+            const ticket = tickets.find(t => t.id === selectedTicketId);
+
+            if (!ticket) {
+                toast("Select a ticket first.", "error");
+                return;
+            }
+
+            try {
+                const saved = await postJson(urls.addComment, {
+                    id: ticket.dbId,
+                    comment: comment
+                });
+
+                const index = tickets.findIndex(t => t.dbId === saved.dbId);
+                if (index >= 0) tickets[index] = saved;
+
+                selectedTicketId = saved.id;
+                input.value = "";
+
+                renderTickets();
+
+                toast("Comment saved to database.", "success");
+            } catch (err) {
+                toast(err.message || "Could not save comment.", "error");
+            }
+        });
+
+document.getElementById("commentInput").addEventListener("keydown", e => {
+    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) document.getElementById("submitComment").click();
+});
+
+// ========== COMMENT MODAL ==========
+function openCommentModal(id) {
+    commentModalTicketId = id;
+    document.getElementById("commentModalId").textContent = id;
+    document.getElementById("modalCommentText").value = "";
+    openModal("commentModal");
+    setTimeout(() => document.getElementById("modalCommentText").focus(), 80);
+}
+
+        document.getElementById("submitModalComment").addEventListener("click", async () => {
+            const text = document.getElementById("modalCommentText").value.trim();
+
+            if (!text) {
+                toast("Please write a comment.", "error");
+                return;
+            }
+
+            const ticket = tickets.find(t => t.id === commentModalTicketId);
+
+            if (!ticket) {
+                toast("Ticket not found.", "error");
+                return;
+            }
+
+            try {
+                const saved = await postJson(urls.addComment, {
+                    id: ticket.dbId,
+                    comment: text
+                });
+
+                const index = tickets.findIndex(t => t.dbId === saved.dbId);
+
+                if (index >= 0) {
+                    tickets[index] = saved;
+                }
+
+                selectedTicketId = saved.id;
+                commentModalTicketId = null;
+
+                document.getElementById("modalCommentText").value = "";
+
+                closeModal("commentModal");
+                renderTickets();
+
+                toast("Comment saved to database.", "success");
+            } catch (err) {
+                toast(err.message || "Could not save comment.", "error");
+            }
+        });
+
+// ========== EXPORT ==========
+document.getElementById("exportBtn").addEventListener("click", () => {
+    const filtered = getFiltered();
+    document.getElementById("exportCount").textContent = filtered.length;
+    openModal("exportModal");
+});
+
+document.getElementById("confirmExport").addEventListener("click", () => {
+    const filtered = getFiltered();
+    const fmt = document.getElementById("exportFormat").value;
+    const fields = [...document.querySelectorAll("#exportFields input:checked")].map(c => c.value);
+
+    let content = "";
+    let mime = "text/plain";
+    let ext = fmt;
+
+    if (fmt === "json") {
+        content = JSON.stringify(filtered.map(t => {
+            const obj = {};
+            fields.forEach(f => obj[f] = t[f] || "");
+            return obj;
+        }), null, 2);
+        mime = "application/json";
+    } else {
+        const sep = fmt === "tsv" ? "\t" : ",";
+        const rows = [fields.join(sep), ...filtered.map(t => fields.map(f => `"${(t[f]||"").replace(/"/g,'""')}"`).join(sep))];
+        content = rows.join("\n");
+        mime = "text/csv";
+    }
+
+    const blob = new Blob([content], { type: mime });
+    const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
+    a.download = `bugtrack-export.${ext}`; a.click();
+    closeModal("exportModal");
+    toast(`Exported ${filtered.length} tickets as ${fmt.toUpperCase()}.`, "success");
+});
+
+// ========== FILTERS ==========
+["topSearch","statusFilter","priorityFilter","typeFilter","assigneeFilter"].forEach(id => {
+    const el = document.getElementById(id);
+    el.addEventListener("input", renderTickets);
+    el.addEventListener("change", renderTickets);
+});
+
+document.getElementById("clearFilters").addEventListener("click", () => {
+    document.getElementById("topSearch").value = "";
+    document.getElementById("statusFilter").value = "";
+    document.getElementById("priorityFilter").value = "";
+    document.getElementById("typeFilter").value = "";
+    document.getElementById("assigneeFilter").value = "";
+    renderTickets();
+});
+
+        const adminHomeLink = document.getElementById("adminHomeLink");
+
+        if (adminHomeLink) {
+            adminHomeLink.addEventListener("click", () => {
+                window.location.href = adminHomeLink.dataset.url;
+            });
+
+            adminHomeLink.addEventListener("keydown", (e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    adminHomeLink.click();
+                }
+            });
+        }
+
+        const logoutUrl = '@Url.Action("Logout", "Auth")';
+        const homeUrl = '@Url.Action("Index", "Home")';
+
+        document.getElementById("logoutBtn")?.addEventListener("click", async (e) => {
+            e.stopPropagation();
+
+            const ok = confirm("Sign out of the BugTrack demo?");
+            if (!ok) return;
+
+            try {
+                const response = await fetch(logoutUrl, {
+                    method: "POST"
+                });
+
+                const result = await response.json();
+
+                window.location.href = result.redirectUrl || homeUrl;
+            } catch {
+                window.location.href = homeUrl;
+            }
+        });
+
+
+// ========== MOBILE SIDEBAR ==========
+const sidebar = document.getElementById("sidebar");
+const mobileBackdrop = document.getElementById("mobileBackdrop");
+
+function closeMobileSidebar() { sidebar.classList.remove("open"); mobileBackdrop.classList.remove("show"); document.body.style.overflow = ""; }
+function openMobileSidebar() { sidebar.classList.add("open"); mobileBackdrop.classList.add("show"); document.body.style.overflow = "hidden"; }
+
+document.getElementById("mobileMenu").addEventListener("click", () => {
+    sidebar.classList.contains("open") ? closeMobileSidebar() : openMobileSidebar();
+});
+mobileBackdrop.addEventListener("click", closeMobileSidebar);
+sidebar.querySelectorAll("a.nav-item").forEach(a => a.addEventListener("click", closeMobileSidebar));
+
+// ========== INIT ==========
+renderTickets();
+</script>
+</body>
+</html>
