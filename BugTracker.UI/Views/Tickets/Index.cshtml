@@ -46,6 +46,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#080d1a" />
     <title>Tickets | BugTrack</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700;800;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -93,7 +94,6 @@
             overflow-x: hidden;
         }
 
-        /* Animated background */
         body::before {
             content: '';
             position: fixed;
@@ -139,6 +139,7 @@
             color: var(--text);
             font-size: 13.5px;
             letter-spacing: -0.01em;
+            -webkit-tap-highlight-color: transparent;
         }
         .btn:hover { transform: translateY(-1px); }
         .btn:active { transform: translateY(0); }
@@ -226,7 +227,7 @@
             position: fixed;
             top: 0; left: 0;
             height: 100vh;
-            z-index: 100;
+            z-index: 200;
             backdrop-filter: blur(24px);
         }
 
@@ -285,6 +286,7 @@
             transition: all 0.15s ease;
             margin-bottom: 2px;
             user-select: none;
+            -webkit-tap-highlight-color: transparent;
         }
         .nav-item:hover { color: var(--text); background: rgba(255,255,255,0.05); }
         .nav-item.active {
@@ -337,7 +339,6 @@
         }
         .avatar-sm { width: 26px; height: 26px; font-size: 10px; }
 
-        /* Distinct avatar colors */
         .av-rp { background: linear-gradient(135deg, rgba(79,255,176,0.15), rgba(77,158,255,0.15)); color: var(--accent); border-color: rgba(79,255,176,0.25); }
         .av-mc { background: linear-gradient(135deg, rgba(77,158,255,0.15), rgba(176,110,255,0.15)); color: var(--accent-2); border-color: rgba(77,158,255,0.25); }
         .av-sp { background: linear-gradient(135deg, rgba(176,110,255,0.15), rgba(232,121,249,0.15)); color: var(--accent-3); border-color: rgba(176,110,255,0.25); }
@@ -384,6 +385,9 @@
         .page-actions { display: flex; align-items: center; gap: 10px; }
         .page-body { padding: 24px 28px; }
 
+        /* Mobile search toggle — hidden on desktop */
+        #mobileSearchToggle { display: none; }
+
         /* ===== SEARCH ===== */
         .search-bar {
             display: flex;
@@ -404,6 +408,38 @@
         .search-bar input { border: none; outline: none; background: transparent; color: var(--text); width: 100%; }
         .search-bar input::placeholder { color: var(--muted); }
 
+        /* Floating mobile search */
+        .mobile-search-bar {
+            display: none;
+            position: fixed;
+            top: calc(var(--header-h) + 6px);
+            left: 12px;
+            right: 12px;
+            z-index: 60;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 14px;
+            background: rgba(13,21,37,0.98);
+            border: 1px solid var(--border-strong);
+            border-radius: var(--radius-sm);
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(20px);
+        }
+        .mobile-search-bar.open { display: flex; animation: fadeInDown 0.18s ease; }
+        @@keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .mobile-search-bar input {
+            flex: 1;
+            border: none;
+            background: transparent;
+            color: var(--text);
+            outline: none;
+            font-size: 15px;
+        }
+        .mobile-search-bar input::placeholder { color: var(--muted); }
+
         /* ===== STATS ===== */
         .stats-grid {
             display: grid;
@@ -423,11 +459,6 @@
             transition: border-color 0.2s ease;
         }
         .stat-card:hover { border-color: var(--border-strong); }
-       
-        .stat-card:nth-child(1)::after { background: var(--info); }
-        .stat-card:nth-child(2)::after { background: var(--warning); }
-        .stat-card:nth-child(3)::after { background: var(--danger); }
-        .stat-card:nth-child(4)::after { background: var(--success); }
 
         .stat-label {
             font-size: 11px;
@@ -505,7 +536,6 @@
             font-family: var(--font-mono);
         }
 
-        /* Sortable header */
         thead th[data-sort] { cursor: pointer; user-select: none; }
         thead th[data-sort]:hover { color: var(--text); }
         thead th[data-sort]::after { content: ' ↕'; opacity: 0.35; }
@@ -547,6 +577,74 @@
         }
         .empty-state strong { color: var(--text); display: block; margin-bottom: 6px; font-size: 1rem; }
         .empty-state svg { margin-bottom: 12px; opacity: 0.3; }
+
+        /* ===== MOBILE TICKET CARDS ===== */
+        .m-card-list { display: none; flex-direction: column; gap: 8px; }
+
+        .m-ticket-card {
+            background: var(--glass);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 14px 16px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            backdrop-filter: blur(16px);
+        }
+        .m-ticket-card:active { transform: scale(0.99); }
+        .m-ticket-card:hover { border-color: var(--border-strong); }
+        .m-ticket-card.selected { border-color: rgba(79,255,176,0.35); background: rgba(79,255,176,0.04); }
+
+        .m-ticket-top {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+        .m-ticket-id {
+            font-family: var(--font-mono);
+            font-size: 10.5px;
+            color: var(--muted);
+            margin-bottom: 3px;
+        }
+        .m-ticket-title {
+            font-size: 13.5px;
+            font-weight: 600;
+            line-height: 1.35;
+            color: var(--text);
+        }
+        .m-ticket-card.selected .m-ticket-title { color: var(--accent); }
+
+        .m-ticket-badges {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+        }
+        .m-ticket-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-top: 8px;
+            border-top: 1px solid var(--border);
+        }
+        .m-ticket-assignee {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: var(--muted);
+        }
+        .m-ticket-time {
+            font-size: 11px;
+            color: var(--muted);
+            font-family: var(--font-mono);
+        }
+        .m-ticket-actions {
+            display: flex;
+            gap: 2px;
+        }
 
         /* ===== DETAIL PANEL ===== */
         .detail-grid {
@@ -648,7 +746,6 @@
         .activity-item h4 { font-size: 12.5px; font-weight: 600; margin-bottom: 2px; }
         .activity-item span { color: var(--muted); font-size: 11px; font-family: var(--font-mono); }
 
-        /* Comment input in activity */
         .comment-box {
             margin-top: 14px;
             padding-top: 14px;
@@ -770,7 +867,6 @@
             flex-wrap: wrap;
         }
 
-        /* Delete modal */
         .delete-icon {
             width: 52px; height: 52px;
             border-radius: 50%;
@@ -784,7 +880,6 @@
         .delete-modal-body h3 { font-family: var(--font-display); font-size: 1.1rem; margin-bottom: 8px; }
         .delete-modal-body p { color: var(--muted); font-size: 13px; }
 
-        /* Status change modal */
         .status-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
         .status-option {
             padding: 14px;
@@ -793,13 +888,13 @@
             cursor: pointer;
             transition: all 0.15s;
             background: rgba(255,255,255,0.03);
+            -webkit-tap-highlight-color: transparent;
         }
         .status-option:hover { border-color: var(--border-strong); background: rgba(255,255,255,0.06); }
         .status-option.selected { border-color: rgba(79,255,176,0.4); background: rgba(79,255,176,0.06); }
         .status-option .status-name { font-weight: 600; font-size: 13px; margin-top: 6px; }
         .status-option .status-desc { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
 
-        /* Keyboard shortcut badge */
         .kbd {
             display: inline-flex;
             align-items: center;
@@ -851,60 +946,265 @@
         /* ===== MOBILE BACKDROP ===== */
         .mobile-backdrop {
             position: fixed;
-            top: 0;
-            left: var(--sidebar-w); /* starts after the sidebar */
-            right: 0;
-            bottom: 0;
-            z-index: 90;
-            background: rgba(0,0,0,0.6);
-            backdrop-filter: blur(6px);
+            inset: 0;
+            z-index: 190;
+            /* No backdrop-filter here — it would visually blur the sidebar even at higher z-index
+               because backdrop-filter composites against the paint layer, not z-order */
+            background: rgba(0,0,0,0.65);
             display: none;
         }
         .mobile-backdrop.show { display: block; }
 
+        /* When sidebar is open, shift the backdrop to start after the sidebar so it
+           never sits behind/over the sidebar's rendered pixels */
+        .sidebar.open ~ .mobile-backdrop,
+        body.sidebar-open .mobile-backdrop {
+            /* Can't easily use a sibling selector here since backdrop is before sidebar in DOM,
+               so we handle this via JS class on body instead */
+        }
+
+        /* ===== MOBILE BOTTOM NAV ===== */
+        .mobile-bottom-nav {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 150;
+            background: rgba(8,13,26,0.97);
+            border-top: 1px solid var(--border-strong);
+            backdrop-filter: blur(24px);
+            padding: 6px 0 max(6px, env(safe-area-inset-bottom));
+        }
+        .mobile-bottom-nav-inner {
+            display: flex;
+            align-items: stretch;
+        }
+        .bottom-nav-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 3px;
+            padding: 6px 4px;
+            color: var(--muted);
+            font-size: 9.5px;
+            font-weight: 700;
+            font-family: var(--font-mono);
+            cursor: pointer;
+            background: transparent;
+            border: none;
+            transition: color 0.15s;
+            -webkit-tap-highlight-color: transparent;
+            min-height: 48px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .bottom-nav-item:hover, .bottom-nav-item.active { color: var(--accent); }
+        .bottom-nav-item.new-btn {
+            color: #030810;
+        }
+        .bottom-nav-item.new-btn .btn-new-inner {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            border-radius: 12px;
+            padding: 7px 16px;
+            width: 100%;
+            color: #030810;
+        }
+        .bottom-nav-item svg { flex-shrink: 0; }
+
+        /* ===== USER LINK CARD ===== */
+        .user-link-card {
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .user-link-card:hover {
+            background: rgba(255,255,255,0.07);
+            border-color: var(--border-strong);
+        }
+        .user-link-card:focus-visible {
+            outline: 2px solid rgba(79,255,176,0.5);
+            outline-offset: 2px;
+        }
+
         /* ===== RESPONSIVE ===== */
+
+        /* Tablet */
         @@media (max-width: 1100px) {
             .stats-grid { grid-template-columns: repeat(2, 1fr); }
             .detail-grid { grid-template-columns: 1fr; }
             .search-bar { width: 240px; }
         }
 
+        /* Mobile */
         @@media (max-width: 860px) {
-            .sidebar { transform: translateX(-100%); transition: transform 0.22s ease; box-shadow: var(--shadow); }
+            :root { --header-h: 56px; }
+
+            /* Sidebar overlay */
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+                box-shadow: var(--shadow);
+                width: min(var(--sidebar-w), 82vw);
+            }
             .sidebar.open { transform: translateX(0); }
+
             .main-content { margin-left: 0; }
             .mobile-menu { display: inline-flex; }
-            .page-header { padding: 0 16px; }
-            .page-body { padding: 16px; }
-            .page-actions { gap: 8px; }
-            .search-bar { width: 200px; }
-        }
 
-        @@media (max-width: 640px) {
-            .stats-grid, .detail-meta, .form-row { grid-template-columns: 1fr; }
+            /* Header */
+            .page-header { padding: 0 14px; gap: 8px; }
+            .page-header h1 { font-size: 1.05rem; }
+            .breadcrumb { display: none; }
+            .page-actions { gap: 6px; }
+
+            /* Page body — extra bottom padding for bottom nav */
+            .page-body { padding: 16px 14px 84px; }
+
+            /* Stats 2-col */
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+                margin-bottom: 16px;
+            }
+            .stat-card { padding: 14px 16px; }
+            .stat-value { font-size: 2rem; }
+
+            /* Filter bar horizontal scroll strip */
+            .filter-bar {
+                flex-wrap: nowrap;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                gap: 6px;
+                margin-bottom: 10px;
+                padding-bottom: 4px;
+                scrollbar-width: none;
+                -ms-overflow-style: none;
+            }
+            .filter-bar::-webkit-scrollbar { display: none; }
+            .result-count { display: none; }
+            .filter-select { flex-shrink: 0; font-size: 12px; padding: 7px 10px; min-height: 36px; }
+            #clearFilters { flex-shrink: 0; }
+
+            /* Table hidden, card list shown */
+            .table-wrap { display: none; }
+            .m-card-list { display: flex; }
+
+            /* Detail panel stacked */
+            .detail-grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
+                margin-top: 12px;
+            }
+            .detail-card { padding: 16px; }
+            .detail-meta { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+            .detail-meta-item { padding: 10px; }
+            .detail-actions { gap: 6px; }
+            .detail-actions .btn { flex: 1; justify-content: center; font-size: 12px; padding: 8px 10px; }
+
+            /* Modals slide up from bottom */
+            .modal-backdrop {
+                align-items: flex-end;
+                padding: 0;
+            }
+            .modal-card {
+                width: 100%;
+                border-radius: 20px 20px 0 0;
+                max-height: 90vh;
+                overflow-y: auto;
+                animation: slideUp 0.28s cubic-bezier(0.34, 1.2, 0.64, 1);
+            }
+            .modal-card.modal-sm { width: 100%; }
+            .modal-card.modal-lg { width: 100%; }
+            @@keyframes slideUp {
+                from { opacity: 0.5; transform: translateY(60px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+
+            /* Modal drag handle */
+            .modal-card::before {
+                content: '';
+                display: block;
+                width: 36px;
+                height: 4px;
+                border-radius: 999px;
+                background: rgba(255,255,255,0.15);
+                margin: 10px auto 0;
+            }
+
+            .modal-header { padding: 12px 18px; }
+            .modal-body { padding: 14px 18px; gap: 12px; }
+            .modal-actions { padding: 12px 18px; flex-wrap: nowrap; }
+            .form-row { grid-template-columns: 1fr; gap: 10px; }
+            .delete-modal-body { padding: 20px 18px 14px; }
+            .status-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+            .status-option { padding: 11px; }
+
+            /* Search in header → hidden, show toggle icon */
             .page-actions .search-bar { display: none; }
-            .status-grid { grid-template-columns: 1fr; }
+            #mobileSearchToggle { display: inline-flex !important; }
+
+            /* Bottom nav visible */
+            .mobile-bottom-nav { display: block; }
+
+            /* Touch targets */
+            .btn { min-height: 40px; }
+            .btn-sm { min-height: 36px; }
+            .btn-icon { min-height: 40px; min-width: 40px; }
+            .nav-item { min-height: 44px; padding: 10px 14px; }
+
+            /* Toast position */
+            .toast-container { right: 14px; bottom: 80px; }
+            .toast { max-width: calc(100vw - 28px); }
         }
 
-        .user-link-card {
-            cursor: pointer;
-            transition: all 0.15s ease;
+        /* Small phones */
+        @@media (max-width: 480px) {
+            :root { --header-h: 52px; }
+
+            .page-header { padding: 0 12px; }
+            .page-header h1 { font-size: 0.95rem; }
+
+            .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+            .stat-card { padding: 12px 14px; }
+            .stat-value { font-size: 1.75rem; }
+            .stat-sub { display: none; }
+
+            .page-body { padding: 12px 12px 80px; }
+
+            /* Detail actions: 2-col grid */
+            .detail-actions {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 6px;
+            }
+            .detail-actions .btn { width: 100%; }
+
+            /* Export button: icon only */
+            #exportBtn .export-label { display: none; }
+
+            .modal-actions { gap: 8px; }
+            .modal-actions .btn { flex: 1; justify-content: center; }
         }
-
-            .user-link-card:hover {
-                background: rgba(255,255,255,0.07);
-                border-color: var(--border-strong);
-            }
-
-            .user-link-card:focus-visible {
-                outline: 2px solid rgba(79,255,176,0.5);
-                outline-offset: 2px;
-            }
     </style>
 </head>
 <body>
 
 <div class="mobile-backdrop" id="mobileBackdrop"></div>
+
+<!-- Floating mobile search bar -->
+<div class="mobile-search-bar" id="mobileSearchBar">
+    <svg width="14" height="14" fill="none" stroke="var(--muted)" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+    <input id="mobileSearchInput" type="search" placeholder="Search tickets…" autocomplete="off" />
+    <button class="btn btn-ghost btn-icon btn-sm" id="closeMobileSearch" type="button">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+</div>
 
 <div class="app-layout">
     <!-- ===== SIDEBAR ===== -->
@@ -922,22 +1222,22 @@
                 Home
             </a>
 
-                <button class="nav-item active" type="button" id="allTicketsBtn">
-                    <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
-                    All Tickets
-                    <span class="nav-badge" id="navTicketCount">0</span>
-                </button>
-                <button class="nav-item" type="button" id="myIssuesBtn">
-                    <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" /><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" /></svg>
-                    My Issues
-                </button>
+            <button class="nav-item active" type="button" id="allTicketsBtn">
+                <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
+                All Tickets
+                <span class="nav-badge" id="navTicketCount">0</span>
+            </button>
+            <button class="nav-item" type="button" id="myIssuesBtn">
+                <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" /><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" /></svg>
+                My Issues
+            </button>
             <div class="nav-section-label">Management</div>
 
             <button class="nav-item" type="button" id="openCreateModalSide">
                 <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
                 New Ticket
             </button>
-  
+
             <a class="nav-item" href="Tickets/Users">
                 <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/></svg>
                 Users
@@ -951,33 +1251,30 @@
             </a>
         </nav>
 
-            <div class="sidebar-footer">
+        <div class="sidebar-footer">
+            <div class="user-block user-link-card"
+                 id="adminHomeLink"
+                 data-url="@Url.Action("Index", "Home")"
+                 role="link"
+                 tabindex="0"
+                 aria-label="Go to Tickets home">
 
-                <div class="user-block user-link-card"
-                     id="adminHomeLink"
-                     data-url="@Url.Action("Index", "Home")"
-                     role="link"
-                     tabindex="0"
-                     aria-label="Go to Tickets home">
+                <div class="avatar @currentUserAvatarClass">@currentUserInitials</div>
 
-                    <div class="avatar @currentUserAvatarClass">@currentUserInitials</div>
-
-                    <div style="flex:1;min-width:0;">
-                        <div class="truncate" style="font-size:13px;font-weight:700;">@currentUserName</div>
-                        <div class="truncate" style="font-size:11px;color:var(--muted);font-family:var(--font-mono);">@currentUserRole</div>
-                    </div>
-
-                    <button class="btn btn-ghost btn-icon" title="Sign out" type="button" id="logoutBtn" onclick="event.stopPropagation();">
-                        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" />
-                            <polyline points="16 17 21 12 16 7" />
-                            <line x1="21" y1="12" x2="9" y2="12" />
-                        </svg>
-                    </button>
-
+                <div style="flex:1;min-width:0;">
+                    <div class="truncate" style="font-size:13px;font-weight:700;">@currentUserName</div>
+                    <div class="truncate" style="font-size:11px;color:var(--muted);font-family:var(--font-mono);">@currentUserRole</div>
                 </div>
 
+                <button class="btn btn-ghost btn-icon" title="Sign out" type="button" id="logoutBtn" onclick="event.stopPropagation();">
+                    <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" />
+                        <polyline points="16 17 21 12 16 7" />
+                        <line x1="21" y1="12" x2="9" y2="12" />
+                    </svg>
+                </button>
             </div>
+        </div>
     </aside>
 
     <!-- ===== MAIN ===== -->
@@ -994,14 +1291,20 @@
             </div>
 
             <div class="page-actions">
+                <!-- Desktop search -->
                 <div class="search-bar">
                     <svg width="13" height="13" fill="none" stroke="var(--muted)" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
                     <input id="topSearch" type="text" placeholder="Search tickets…" />
                 </div>
 
+                <!-- Mobile search toggle -->
+                <button class="btn btn-secondary btn-icon btn-sm" id="mobileSearchToggle" type="button" title="Search" style="display:none;">
+                    <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+                </button>
+
                 <button class="btn btn-secondary btn-sm" id="exportBtn" type="button">
                     <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                    Export
+                    <span class="export-label">Export</span>
                 </button>
 
                 <button class="btn btn-primary btn-sm" id="openCreateModal" type="button">
@@ -1072,7 +1375,7 @@
                 <span class="result-count" id="resultCount"></span>
             </div>
 
-            <!-- Table -->
+            <!-- Desktop Table -->
             <div class="table-wrap">
                 <table>
                     <thead>
@@ -1094,6 +1397,14 @@
                     <strong>No tickets found</strong>
                     Try adjusting your filters or create a new ticket.
                 </div>
+            </div>
+
+            <!-- Mobile Card List -->
+            <div class="m-card-list" id="mCardList"></div>
+            <div class="empty-state" id="emptyStateMobile" style="display:none;">
+                <svg width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                <strong>No tickets found</strong>
+                Try adjusting your filters or create a new ticket.
             </div>
 
             <!-- Detail + Activity -->
@@ -1123,6 +1434,34 @@
         </div>
     </main>
 </div>
+
+<!-- ===== MOBILE BOTTOM NAV ===== -->
+<nav class="mobile-bottom-nav" id="mobileBottomNav">
+    <div class="mobile-bottom-nav-inner">
+        <button class="bottom-nav-item active" type="button" id="bnAllTickets">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            All
+        </button>
+        <button class="bottom-nav-item" type="button" id="bnMyIssues">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+            Mine
+        </button>
+        <button class="bottom-nav-item new-btn" type="button" id="bnNewTicket">
+            <div class="btn-new-inner">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                New
+            </div>
+        </button>
+        <button class="bottom-nav-item" type="button" id="bnSearch">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+            Search
+        </button>
+        <button class="bottom-nav-item" type="button" id="bnMenu">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+            Menu
+        </button>
+    </div>
+</nav>
 
 <!-- ===== CREATE MODAL ===== -->
 <div class="modal-backdrop" id="createModal">
@@ -1329,7 +1668,7 @@
     </div>
 </div>
 
-<!-- ===== COMMENT MODAL (full) ===== -->
+<!-- ===== COMMENT MODAL ===== -->
 <div class="modal-backdrop" id="commentModal">
     <div class="modal-card">
         <div class="modal-header">
@@ -1426,20 +1765,15 @@
         async function postJson(url, data) {
             const response = await fetch(url, {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(data)
             });
-
             if (!response.ok) {
                 const message = await response.text();
                 throw new Error(message || "Request failed.");
             }
-
             return await response.json();
         }
-
 
 const assigneeMap = {
     "Rafael Parra": { initials: "RP", avClass: "av-rp" },
@@ -1456,7 +1790,7 @@ function badgeClass(value) {
     return map[value.toLowerCase()] || "task";
 }
 
-function timeAgo() { return "Just now"; }
+function isMobile() { return window.innerWidth <= 860; }
 
 // ========== TOAST ==========
 function toast(message, type = "success") {
@@ -1481,16 +1815,16 @@ function toast(message, type = "success") {
             document.getElementById("assigneeFilter").value = "Rafael Parra";
             document.querySelectorAll(".nav-item").forEach(i => i.classList.remove("active"));
             document.getElementById("myIssuesBtn").classList.add("active");
-
             const firstMatch = tickets.find(t => t.assignee === "Rafael Parra");
             if (firstMatch) selectedTicketId = firstMatch.id;
-
             renderTickets();
             closeMobileSidebar();
         });
+
         document.getElementById("allTicketsBtn").addEventListener("click", () => {
             document.getElementById("assigneeFilter").value = "";
             document.getElementById("topSearch").value = "";
+            document.getElementById("mobileSearchInput").value = "";
             document.getElementById("statusFilter").value = "";
             document.getElementById("priorityFilter").value = "";
             document.getElementById("typeFilter").value = "";
@@ -1499,6 +1833,7 @@ function toast(message, type = "success") {
             renderTickets();
             closeMobileSidebar();
         });
+
 function openModal(id) {
     document.getElementById(id).classList.add("show");
     document.body.style.overflow = "hidden";
@@ -1522,8 +1857,36 @@ document.addEventListener("keydown", e => {
     if (e.key === "Escape") {
         document.querySelectorAll(".modal-backdrop.show").forEach(m => closeModal(m.id));
         closeMobileSidebar();
+        closeMobileSearch();
     }
 });
+
+// ========== MOBILE SEARCH ==========
+const mobileSearchBar = document.getElementById("mobileSearchBar");
+const mobileSearchInput = document.getElementById("mobileSearchInput");
+const mobileSearchToggle = document.getElementById("mobileSearchToggle");
+const closeMobileSearchBtn = document.getElementById("closeMobileSearch");
+
+function openMobileSearch() {
+    mobileSearchBar.classList.add("open");
+    setTimeout(() => mobileSearchInput.focus(), 80);
+}
+function closeMobileSearch() {
+    mobileSearchBar.classList.remove("open");
+    mobileSearchInput.value = "";
+    syncSearch();
+}
+
+mobileSearchToggle.addEventListener("click", openMobileSearch);
+closeMobileSearchBtn.addEventListener("click", closeMobileSearch);
+mobileSearchInput.addEventListener("input", syncSearch);
+
+function syncSearch() {
+    // Sync mobile search with the main topSearch input
+    const val = mobileSearchInput.value;
+    document.getElementById("topSearch").value = val;
+    renderTickets();
+}
 
 // ========== FILTERS & SORT ==========
 function getFiltered() {
@@ -1551,6 +1914,75 @@ function getFiltered() {
     }
 
     return list;
+}
+
+// ========== RENDER MOBILE CARDS ==========
+function renderMobileCards(filtered) {
+    const container = document.getElementById("mCardList");
+    const emptyMobile = document.getElementById("emptyStateMobile");
+    container.innerHTML = "";
+
+    if (filtered.length === 0) {
+        emptyMobile.style.display = "block";
+        return;
+    }
+    emptyMobile.style.display = "none";
+
+    filtered.forEach(t => {
+        const card = document.createElement("div");
+        card.className = `m-ticket-card${t.id === selectedTicketId ? " selected" : ""}`;
+        card.innerHTML = `
+            <div class="m-ticket-top">
+                <div style="flex:1;min-width:0;">
+                    <div class="m-ticket-id">${t.id}</div>
+                    <div class="m-ticket-title">${t.title}</div>
+                </div>
+                <span class="badge badge-${badgeClass(t.priority)}" style="flex-shrink:0;">${t.priority}</span>
+            </div>
+            <div class="m-ticket-badges">
+                <span class="badge badge-${badgeClass(t.status)}">${t.status}</span>
+                <span class="badge badge-${badgeClass(t.type)}">${t.type}</span>
+            </div>
+            <div class="m-ticket-footer">
+                <div class="m-ticket-assignee">
+                    <div class="avatar avatar-sm ${t.avClass}">${t.initials}</div>
+                    <span>${t.assignee}</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:6px;">
+                    <span class="m-ticket-time">${t.updated}</span>
+                    <div class="m-ticket-actions">
+                        <button class="btn btn-ghost btn-icon btn-sm m-edit-btn" data-id="${t.id}" title="Edit" type="button">
+                            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"/></svg>
+                        </button>
+                        <button class="btn btn-ghost btn-icon btn-sm m-delete-btn" data-id="${t.id}" title="Delete" type="button" style="color:var(--danger);opacity:0.7;">
+                            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        card.addEventListener("click", e => {
+            if (e.target.closest(".m-edit-btn") || e.target.closest(".m-delete-btn")) return;
+            selectedTicketId = t.id;
+            renderTickets();
+            renderDetail(t);
+            // Scroll to detail on mobile
+            setTimeout(() => {
+                document.getElementById("ticketDetail").scrollIntoView({ behavior: "smooth", block: "start" });
+            }, 60);
+        });
+
+        container.appendChild(card);
+    });
+
+    // Bind mobile card buttons
+    container.querySelectorAll(".m-edit-btn").forEach(btn => {
+        btn.addEventListener("click", e => { e.stopPropagation(); openEditModal(btn.dataset.id); });
+    });
+    container.querySelectorAll(".m-delete-btn").forEach(btn => {
+        btn.addEventListener("click", e => { e.stopPropagation(); openDeleteModal(btn.dataset.id); });
+    });
 }
 
 // ========== RENDER TABLE ==========
@@ -1599,9 +2031,11 @@ function renderTickets() {
     document.getElementById("resultCount").textContent = `${filtered.length} ticket${filtered.length !== 1 ? "s" : ""}`;
     document.getElementById("navTicketCount").textContent = tickets.filter(t => t.status !== "Resolved").length;
 
+    // Render mobile cards
+    renderMobileCards(filtered);
+
     updateStats();
 
-    // Re-bind edit / delete row buttons
     document.querySelectorAll(".edit-btn").forEach(btn => {
         btn.addEventListener("click", e => { e.stopPropagation(); openEditModal(btn.dataset.id); });
     });
@@ -1609,7 +2043,6 @@ function renderTickets() {
         btn.addEventListener("click", e => { e.stopPropagation(); openDeleteModal(btn.dataset.id); });
     });
 
-    // Auto-select
     const selected = tickets.find(t => t.id === selectedTicketId) || filtered[0];
     if (selected) renderDetail(selected);
 }
@@ -1720,32 +2153,21 @@ document.getElementById("openCreateModalSide").addEventListener("click", openCre
         document.getElementById("submitCreate").addEventListener("click", async () => {
             const title = document.getElementById("createTitle").value.trim();
             const desc = document.getElementById("createDescription").value.trim();
-
-            if (!title || !desc) {
-                toast("Please fill in all required fields.", "error");
-                return;
-            }
-
+            if (!title || !desc) { toast("Please fill in all required fields.", "error"); return; }
             try {
                 const saved = await postJson(urls.create, {
-                    title: title,
-                    description: desc,
+                    title, description: desc,
                     type: document.getElementById("createType").value,
                     status: document.getElementById("createStatus").value,
                     priority: document.getElementById("createPriority").value,
                     assignee: document.getElementById("createAssignee").value
                 });
-
                 tickets.unshift(saved);
                 selectedTicketId = saved.id;
-
                 closeModal("createModal");
                 renderTickets();
-
                 toast("Ticket created and saved to database.", "success");
-            } catch (err) {
-                toast(err.message || "Could not create ticket.", "error");
-            }
+            } catch (err) { toast(err.message || "Could not create ticket.", "error"); }
         });
 
 // ========== EDIT TICKET ==========
@@ -1753,7 +2175,6 @@ function openEditModal(id) {
     const t = tickets.find(x => x.id === id);
     if (!t) return;
     editingTicketId = id;
-
     document.getElementById("editModalId").textContent = t.id;
     document.getElementById("editTitle").value = t.title;
     document.getElementById("editDescription").value = t.description;
@@ -1761,50 +2182,32 @@ function openEditModal(id) {
     document.getElementById("editStatus").value = t.status;
     document.getElementById("editPriority").value = t.priority;
     document.getElementById("editAssignee").value = t.assignee;
-
     openModal("editModal");
     setTimeout(() => document.getElementById("editTitle").focus(), 80);
 }
+
         document.getElementById("submitEdit").addEventListener("click", async () => {
             const ticket = tickets.find(t => t.id === editingTicketId);
-
-            if (!ticket) {
-                toast("Ticket not found.", "error");
-                return;
-            }
-
+            if (!ticket) { toast("Ticket not found.", "error"); return; }
             const title = document.getElementById("editTitle").value.trim();
             const desc = document.getElementById("editDescription").value.trim();
-
-            if (!title || !desc) {
-                toast("Please fill in all required fields.", "error");
-                return;
-            }
-
+            if (!title || !desc) { toast("Please fill in all required fields.", "error"); return; }
             try {
                 const saved = await postJson(urls.edit, {
-                    id: ticket.dbId,
-                    title: title,
-                    description: desc,
+                    id: ticket.dbId, title, description: desc,
                     type: document.getElementById("editType").value,
                     status: document.getElementById("editStatus").value,
                     priority: document.getElementById("editPriority").value,
                     assignee: document.getElementById("editAssignee").value
                 });
-
                 const index = tickets.findIndex(t => t.dbId === saved.dbId);
                 if (index >= 0) tickets[index] = saved;
-
                 selectedTicketId = saved.id;
                 editingTicketId = null;
-
                 closeModal("editModal");
                 renderTickets();
-
                 toast("Ticket changes saved to database.", "success");
-            } catch (err) {
-                toast(err.message || "Could not save changes.", "error");
-            }
+            } catch (err) { toast(err.message || "Could not save changes.", "error"); }
         });
 
 document.getElementById("editDeleteBtn").addEventListener("click", () => {
@@ -1823,29 +2226,16 @@ function openDeleteModal(id) {
 
         document.getElementById("confirmDelete").addEventListener("click", async () => {
             const ticket = tickets.find(t => t.id === deletingTicketId);
-
-            if (!ticket) {
-                closeModal("deleteModal");
-                return;
-            }
-
+            if (!ticket) { closeModal("deleteModal"); return; }
             try {
-                await postJson(urls.delete, {
-                    id: ticket.dbId
-                });
-
+                await postJson(urls.delete, { id: ticket.dbId });
                 tickets = tickets.filter(t => t.id !== deletingTicketId);
-
                 selectedTicketId = tickets.length ? tickets[0].id : null;
                 deletingTicketId = null;
-
                 closeModal("deleteModal");
                 renderTickets();
-
                 toast("Ticket deleted from database.", "success");
-            } catch (err) {
-                toast(err.message || "Could not delete ticket.", "error");
-            }
+            } catch (err) { toast(err.message || "Could not delete ticket.", "error"); }
         });
 
 // ========== STATUS MODAL ==========
@@ -1855,11 +2245,9 @@ function openStatusModal(id) {
     statusModalTicketId = id;
     selectedStatus = t.status;
     document.getElementById("statusModalTicketTitle").textContent = t.title;
-
     document.querySelectorAll(".status-option").forEach(opt => {
         opt.classList.toggle("selected", opt.dataset.value === t.status);
     });
-
     openModal("statusModal");
 }
 
@@ -1870,71 +2258,39 @@ document.querySelectorAll(".status-option").forEach(opt => {
         opt.classList.add("selected");
     });
 });
+
         document.getElementById("confirmStatusChange").addEventListener("click", async () => {
             const ticket = tickets.find(t => t.id === statusModalTicketId);
-
-            if (!ticket || !selectedStatus) {
-                closeModal("statusModal");
-                return;
-            }
-
+            if (!ticket || !selectedStatus) { closeModal("statusModal"); return; }
             try {
-                const saved = await postJson(urls.changeStatus, {
-                    id: ticket.dbId,
-                    status: selectedStatus
-                });
-
+                const saved = await postJson(urls.changeStatus, { id: ticket.dbId, status: selectedStatus });
                 const index = tickets.findIndex(t => t.dbId === saved.dbId);
                 if (index >= 0) tickets[index] = saved;
-
                 selectedTicketId = saved.id;
                 statusModalTicketId = null;
                 selectedStatus = null;
-
                 closeModal("statusModal");
                 renderTickets();
-
                 toast("Status saved to database.", "success");
-            } catch (err) {
-                toast(err.message || "Could not update status.", "error");
-            }
+            } catch (err) { toast(err.message || "Could not update status.", "error"); }
         });
 
 // ========== COMMENT (inline) ==========
         document.getElementById("submitComment").addEventListener("click", async () => {
             const input = document.getElementById("commentInput");
             const comment = input.value.trim();
-
-            if (!comment) {
-                toast("Comment cannot be empty.", "error");
-                return;
-            }
-
+            if (!comment) { toast("Comment cannot be empty.", "error"); return; }
             const ticket = tickets.find(t => t.id === selectedTicketId);
-
-            if (!ticket) {
-                toast("Select a ticket first.", "error");
-                return;
-            }
-
+            if (!ticket) { toast("Select a ticket first.", "error"); return; }
             try {
-                const saved = await postJson(urls.addComment, {
-                    id: ticket.dbId,
-                    comment: comment
-                });
-
+                const saved = await postJson(urls.addComment, { id: ticket.dbId, comment });
                 const index = tickets.findIndex(t => t.dbId === saved.dbId);
                 if (index >= 0) tickets[index] = saved;
-
                 selectedTicketId = saved.id;
                 input.value = "";
-
                 renderTickets();
-
                 toast("Comment saved to database.", "success");
-            } catch (err) {
-                toast(err.message || "Could not save comment.", "error");
-            }
+            } catch (err) { toast(err.message || "Could not save comment.", "error"); }
         });
 
 document.getElementById("commentInput").addEventListener("keydown", e => {
@@ -1952,43 +2308,20 @@ function openCommentModal(id) {
 
         document.getElementById("submitModalComment").addEventListener("click", async () => {
             const text = document.getElementById("modalCommentText").value.trim();
-
-            if (!text) {
-                toast("Please write a comment.", "error");
-                return;
-            }
-
+            if (!text) { toast("Please write a comment.", "error"); return; }
             const ticket = tickets.find(t => t.id === commentModalTicketId);
-
-            if (!ticket) {
-                toast("Ticket not found.", "error");
-                return;
-            }
-
+            if (!ticket) { toast("Ticket not found.", "error"); return; }
             try {
-                const saved = await postJson(urls.addComment, {
-                    id: ticket.dbId,
-                    comment: text
-                });
-
+                const saved = await postJson(urls.addComment, { id: ticket.dbId, comment: text });
                 const index = tickets.findIndex(t => t.dbId === saved.dbId);
-
-                if (index >= 0) {
-                    tickets[index] = saved;
-                }
-
+                if (index >= 0) tickets[index] = saved;
                 selectedTicketId = saved.id;
                 commentModalTicketId = null;
-
                 document.getElementById("modalCommentText").value = "";
-
                 closeModal("commentModal");
                 renderTickets();
-
                 toast("Comment saved to database.", "success");
-            } catch (err) {
-                toast(err.message || "Could not save comment.", "error");
-            }
+            } catch (err) { toast(err.message || "Could not save comment.", "error"); }
         });
 
 // ========== EXPORT ==========
@@ -2002,17 +2335,9 @@ document.getElementById("confirmExport").addEventListener("click", () => {
     const filtered = getFiltered();
     const fmt = document.getElementById("exportFormat").value;
     const fields = [...document.querySelectorAll("#exportFields input:checked")].map(c => c.value);
-
-    let content = "";
-    let mime = "text/plain";
-    let ext = fmt;
-
+    let content = "", mime = "text/plain", ext = fmt;
     if (fmt === "json") {
-        content = JSON.stringify(filtered.map(t => {
-            const obj = {};
-            fields.forEach(f => obj[f] = t[f] || "");
-            return obj;
-        }), null, 2);
+        content = JSON.stringify(filtered.map(t => { const obj = {}; fields.forEach(f => obj[f] = t[f] || ""); return obj; }), null, 2);
         mime = "application/json";
     } else {
         const sep = fmt === "tsv" ? "\t" : ",";
@@ -2020,7 +2345,6 @@ document.getElementById("confirmExport").addEventListener("click", () => {
         content = rows.join("\n");
         mime = "text/csv";
     }
-
     const blob = new Blob([content], { type: mime });
     const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
     a.download = `bugtrack-export.${ext}`; a.click();
@@ -2037,6 +2361,7 @@ document.getElementById("confirmExport").addEventListener("click", () => {
 
 document.getElementById("clearFilters").addEventListener("click", () => {
     document.getElementById("topSearch").value = "";
+    document.getElementById("mobileSearchInput").value = "";
     document.getElementById("statusFilter").value = "";
     document.getElementById("priorityFilter").value = "";
     document.getElementById("typeFilter").value = "";
@@ -2044,18 +2369,12 @@ document.getElementById("clearFilters").addEventListener("click", () => {
     renderTickets();
 });
 
+// ========== ADMIN LINK ==========
         const adminHomeLink = document.getElementById("adminHomeLink");
-
         if (adminHomeLink) {
-            adminHomeLink.addEventListener("click", () => {
-                window.location.href = adminHomeLink.dataset.url;
-            });
-
+            adminHomeLink.addEventListener("click", () => { window.location.href = adminHomeLink.dataset.url; });
             adminHomeLink.addEventListener("keydown", (e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    adminHomeLink.click();
-                }
+                if (e.key === "Enter" || e.key === " ") { e.preventDefault(); adminHomeLink.click(); }
             });
         }
 
@@ -2064,36 +2383,62 @@ document.getElementById("clearFilters").addEventListener("click", () => {
 
         document.getElementById("logoutBtn")?.addEventListener("click", async (e) => {
             e.stopPropagation();
-
             const ok = confirm("Sign out of the BugTrack demo?");
             if (!ok) return;
-
             try {
-                const response = await fetch(logoutUrl, {
-                    method: "POST"
-                });
-
+                const response = await fetch(logoutUrl, { method: "POST" });
                 const result = await response.json();
-
                 window.location.href = result.redirectUrl || homeUrl;
-            } catch {
-                window.location.href = homeUrl;
-            }
+            } catch { window.location.href = homeUrl; }
         });
-
 
 // ========== MOBILE SIDEBAR ==========
 const sidebar = document.getElementById("sidebar");
 const mobileBackdrop = document.getElementById("mobileBackdrop");
 
-function closeMobileSidebar() { sidebar.classList.remove("open"); mobileBackdrop.classList.remove("show"); document.body.style.overflow = ""; }
-function openMobileSidebar() { sidebar.classList.add("open"); mobileBackdrop.classList.add("show"); document.body.style.overflow = "hidden"; }
+function closeMobileSidebar() {
+    sidebar.classList.remove("open");
+    mobileBackdrop.classList.remove("show");
+    mobileBackdrop.style.left = "0";
+    document.body.style.overflow = "";
+}
+function openMobileSidebar() {
+    sidebar.classList.add("open");
+    mobileBackdrop.classList.add("show");
+    // Shift backdrop's left edge past the sidebar so its pixels never overlap
+    // the sidebar. backdrop-filter bleeds visually across z-index boundaries,
+    // so spatial separation is the only reliable fix.
+    const sidebarW = sidebar.getBoundingClientRect().width;
+    mobileBackdrop.style.left = sidebarW + "px";
+    document.body.style.overflow = "hidden";
+}
 
 document.getElementById("mobileMenu").addEventListener("click", () => {
     sidebar.classList.contains("open") ? closeMobileSidebar() : openMobileSidebar();
 });
 mobileBackdrop.addEventListener("click", closeMobileSidebar);
 sidebar.querySelectorAll("a.nav-item").forEach(a => a.addEventListener("click", closeMobileSidebar));
+
+// ========== BOTTOM NAV ==========
+document.getElementById("bnAllTickets").addEventListener("click", () => {
+    document.getElementById("allTicketsBtn").click();
+    document.querySelectorAll(".bottom-nav-item").forEach(b => b.classList.remove("active"));
+    document.getElementById("bnAllTickets").classList.add("active");
+});
+document.getElementById("bnMyIssues").addEventListener("click", () => {
+    document.getElementById("myIssuesBtn").click();
+    document.querySelectorAll(".bottom-nav-item").forEach(b => b.classList.remove("active"));
+    document.getElementById("bnMyIssues").classList.add("active");
+});
+document.getElementById("bnNewTicket").addEventListener("click", () => {
+    openCreateModal();
+});
+document.getElementById("bnSearch").addEventListener("click", () => {
+    openMobileSearch();
+});
+document.getElementById("bnMenu").addEventListener("click", () => {
+    sidebar.classList.contains("open") ? closeMobileSidebar() : openMobileSidebar();
+});
 
 // ========== INIT ==========
 renderTickets();
