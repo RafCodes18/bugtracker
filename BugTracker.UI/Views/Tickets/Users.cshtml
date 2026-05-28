@@ -12,7 +12,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Tickets | BugTrack</title>
+    <title>Users | BugTrack</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700;800;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 
@@ -1914,11 +1914,9 @@
     </div>
 
     <div class="toast-container" id="toastContainer"></div>
-    <!-- ===== TOAST CONTAINER ===== -->
-    <div class="toast-container" id="toastContainer"></div>
 
     <script>
-        const currentUserName = @System.Text.Json.JsonSerializer.Serialize(currentUserName);
+        const currentUserName = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(currentUserName));
         const logoutUrl = '@Url.Action("Logout", "Auth")';
         const homeUrl = '@Url.Action("Index", "Home")';
 
@@ -2005,7 +2003,7 @@
             }
         ];
 
-        let selectedUserId = users[0].id;
+        let selectedUserId = users.length ? users[0].id : null;
         let editingUserId = null;
         let deletingUserId = null;
         let nextUserNumber = 5;
@@ -2056,7 +2054,7 @@
             const el = document.createElement("div");
             el.className = `toast toast-${type}`;
             el.innerHTML = `<div class="toast-icon">${icons[type]}</div><span>${message}</span>`;
-            document.getElementById("toastContainer").appendChild(el);
+            document.getElementById("toastContainer")?.appendChild(el);
 
             requestAnimationFrame(() => {
                 requestAnimationFrame(() => el.classList.add("show"));
@@ -2161,40 +2159,40 @@
             }
 
             tbody.innerHTML = filtered.map(u => `
-                        <tr class="${u.id === selectedUserId ? "selected" : ""}" onclick="selectUser('${u.id}')">
-                            <td>
-                                <div class="user-name-cell">
-                                    <div class="avatar avatar-sm ${u.avClass}">${u.initials}</div>
-                                    <div class="user-main">
-                                        <strong>${u.name}</strong>
-                                        <span>${u.email}</span>
-                                    </div>
-                                </div>
-                            </td>
-                            <td><span class="badge badge-${badgeClass(u.role)}">${u.role}</span></td>
-                            <td><span class="badge badge-${badgeClass(u.status)}">${u.status}</span></td>
-                            <td>${u.department}</td>
-                            <td style="font-family:var(--font-mono);">${u.assignedTickets}</td>
-                            <td style="font-family:var(--font-mono);">${u.resolvedTickets}</td>
-                            <td style="color:var(--muted);font-size:12px;">${u.lastActive}</td>
-                            <td>
-                                <div class="row-actions">
-                                    <button class="btn btn-ghost btn-icon" title="Edit" onclick="event.stopPropagation(); openEditModal('${u.id}')">
-                                        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                            <path d="M12 20h9"/>
-                                            <path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4z"/>
-                                        </svg>
-                                    </button>
-                                    <button class="btn btn-ghost btn-icon" title="Remove" onclick="event.stopPropagation(); openDeleteModal('${u.id}')">
-                                        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                            <polyline points="3 6 5 6 21 6"/>
-                                            <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
-                                        </svg>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                    `).join("");
+                                <tr class="${u.id === selectedUserId ? "selected" : ""}" onclick="selectUser('${u.id}')">
+                                    <td>
+                                        <div class="user-name-cell">
+                                            <div class="avatar avatar-sm ${u.avClass}">${u.initials}</div>
+                                            <div class="user-main">
+                                                <strong>${u.name}</strong>
+                                                <span>${u.email}</span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td><span class="badge badge-${badgeClass(u.role)}">${u.role}</span></td>
+                                    <td><span class="badge badge-${badgeClass(u.status)}">${u.status}</span></td>
+                                    <td>${u.department}</td>
+                                    <td style="font-family:var(--font-mono);">${u.assignedTickets}</td>
+                                    <td style="font-family:var(--font-mono);">${u.resolvedTickets}</td>
+                                    <td style="color:var(--muted);font-size:12px;">${u.lastActive}</td>
+                                    <td>
+                                        <div class="row-actions">
+                                            <button class="btn btn-ghost btn-icon" title="Edit" onclick="event.stopPropagation(); openEditModal('${u.id}')">
+                                                <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                                    <path d="M12 20h9"/>
+                                                    <path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4z"/>
+                                                </svg>
+                                            </button>
+                                            <button class="btn btn-ghost btn-icon" title="Remove" onclick="event.stopPropagation(); openDeleteModal('${u.id}')">
+                                                <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                                    <polyline points="3 6 5 6 21 6"/>
+                                                    <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            `).join("");
 
             renderUserDetail(users.find(u => u.id === selectedUserId));
         }
@@ -2212,10 +2210,10 @@
 
             if (!u) {
                 detail.innerHTML = `
-                            <div style="color:var(--muted);font-size:13px;text-align:center;padding:20px 0;">
-                                Select a user to view details
-                            </div>
-                        `;
+                                    <div style="color:var(--muted);font-size:13px;text-align:center;padding:20px 0;">
+                                        Select a user to view details
+                                    </div>
+                                `;
                 activityId.textContent = "—";
                 activitySubtitle.textContent = "Select a user to view recent activity.";
                 activityList.innerHTML = "";
@@ -2223,88 +2221,88 @@
             }
 
             detail.innerHTML = `
-                        <div class="detail-header">
-                            <div style="display:flex;align-items:flex-start;gap:12px;">
-                                <div class="avatar ${u.avClass}" style="width:44px;height:44px;font-size:13px;">${u.initials}</div>
-                                <div>
-                                    <h2>${u.name}</h2>
-                                    <p style="font-family:var(--font-mono);font-size:12px;">${u.email}</p>
+                                <div class="detail-header">
+                                    <div style="display:flex;align-items:flex-start;gap:12px;">
+                                        <div class="avatar ${u.avClass}" style="width:44px;height:44px;font-size:13px;">${u.initials}</div>
+                                        <div>
+                                            <h2>${u.name}</h2>
+                                            <p style="font-family:var(--font-mono);font-size:12px;">${u.email}</p>
+                                        </div>
+                                    </div>
+
+                                    <span class="badge badge-${badgeClass(u.status)}">${u.status}</span>
                                 </div>
-                            </div>
 
-                            <span class="badge badge-${badgeClass(u.status)}">${u.status}</span>
-                        </div>
+                                <p>
+                                    ${u.name} is a ${u.role.toLowerCase()} on the BugTrack demo team.
+                                    This profile shows permissions, assignment load, and recent activity for the portfolio demo.
+                                </p>
 
-                        <p>
-                            ${u.name} is a ${u.role.toLowerCase()} on the BugTrack demo team.
-                            This profile shows permissions, assignment load, and recent activity for the portfolio demo.
-                        </p>
+                                <div class="detail-meta">
+                                    <div class="detail-meta-item">
+                                        <strong>User ID</strong>
+                                        ${u.id}
+                                    </div>
+                                    <div class="detail-meta-item">
+                                        <strong>Role</strong>
+                                        ${u.role}
+                                    </div>
+                                    <div class="detail-meta-item">
+                                        <strong>Department</strong>
+                                        ${u.department}
+                                    </div>
+                                    <div class="detail-meta-item">
+                                        <strong>Joined</strong>
+                                        ${u.joined}
+                                    </div>
+                                </div>
 
-                        <div class="detail-meta">
-                            <div class="detail-meta-item">
-                                <strong>User ID</strong>
-                                ${u.id}
-                            </div>
-                            <div class="detail-meta-item">
-                                <strong>Role</strong>
-                                ${u.role}
-                            </div>
-                            <div class="detail-meta-item">
-                                <strong>Department</strong>
-                                ${u.department}
-                            </div>
-                            <div class="detail-meta-item">
-                                <strong>Joined</strong>
-                                ${u.joined}
-                            </div>
-                        </div>
+                                <div class="user-mini-grid">
+                                    <div class="user-mini-stat">
+                                        <strong>${u.assignedTickets}</strong>
+                                        <span>Assigned</span>
+                                    </div>
+                                    <div class="user-mini-stat">
+                                        <strong>${u.resolvedTickets}</strong>
+                                        <span>Resolved</span>
+                                    </div>
+                                    <div class="user-mini-stat">
+                                        <strong>${u.openCritical}</strong>
+                                        <span>Critical</span>
+                                    </div>
+                                </div>
 
-                        <div class="user-mini-grid">
-                            <div class="user-mini-stat">
-                                <strong>${u.assignedTickets}</strong>
-                                <span>Assigned</span>
-                            </div>
-                            <div class="user-mini-stat">
-                                <strong>${u.resolvedTickets}</strong>
-                                <span>Resolved</span>
-                            </div>
-                            <div class="user-mini-stat">
-                                <strong>${u.openCritical}</strong>
-                                <span>Critical</span>
-                            </div>
-                        </div>
+                                <div class="detail-actions">
+                                    <button class="btn btn-secondary btn-sm" onclick="openEditModal('${u.id}')">
+                                        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                            <path d="M12 20h9"/>
+                                            <path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4z"/>
+                                        </svg>
+                                        Edit User
+                                    </button>
 
-                        <div class="detail-actions">
-                            <button class="btn btn-secondary btn-sm" onclick="openEditModal('${u.id}')">
-                                <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                    <path d="M12 20h9"/>
-                                    <path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4z"/>
-                                </svg>
-                                Edit User
-                            </button>
+                                    <button class="btn btn-secondary btn-sm" onclick="toggleUserStatus('${u.id}')">
+                                        ${u.status === "Inactive" ? "Reactivate" : "Mark Inactive"}
+                                    </button>
 
-                            <button class="btn btn-secondary btn-sm" onclick="toggleUserStatus('${u.id}')">
-                                ${u.status === "Inactive" ? "Reactivate" : "Mark Inactive"}
-                            </button>
-
-                            <button class="btn btn-danger btn-sm" onclick="openDeleteModal('${u.id}')">
-                                Remove
-                            </button>
-                        </div>
-                    `;
+                                    <button class="btn btn-danger btn-sm" onclick="openDeleteModal('${u.id}')">
+                                        Remove
+                                    </button>
+                                </div>
+                            `;
 
             activityId.textContent = u.id;
             activitySubtitle.textContent = `${u.name}'s recent workspace activity.`;
 
             activityList.innerHTML = u.activity.map((item, i) => `
-                        <div class="activity-item" style="animation-delay:${i * 0.04}s">
-                            <div class="activity-dot"></div>
-                            <div>
-                                <h4>${item}</h4>
-                                <span>${u.lastActive}</span>
-                            </div>
-                        </div>
-                    `).join("");
+                                <div class="activity-item" style="animation-delay:${i * 0.04}s">
+                                    <div class="activity-dot"></div>
+                                    <div>
+                                        <h4>${item}</h4>
+                                        <span>${u.lastActive}</span>
+                                    </div>
+                                </div>
+                            `).join("");
         }
 
         function openCreateModal() {

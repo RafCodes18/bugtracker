@@ -4,15 +4,42 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Build SQLite connection string.
+// Local development uses appsettings.json.
+// Azure Linux App Service uses /home/site/data, which is writable/persistent.
+var sqliteConnectionString = builder.Configuration.GetConnectionString("BugTrackDb");
+
+if (string.IsNullOrWhiteSpace(sqliteConnectionString))
+{
+    throw new InvalidOperationException("Connection string 'BugTrackDb' not found.");
+}
+
+if (!builder.Environment.IsDevelopment())
+{
+    var homePath = Environment.GetEnvironmentVariable("HOME") ?? "/home";
+    var dataDirectory = Path.Combine(homePath, "site", "data");
+
+    Directory.CreateDirectory(dataDirectory);
+
+    var databasePath = Path.Combine(dataDirectory, "bugtrack.db");
+
+    sqliteConnectionString = $"Data Source={databasePath}";
+}
+
 // Add services to the container.
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("BugTrackDb")));
+    options.UseSqlite(sqliteConnectionString));
+
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
-builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
-    .AddEntityFrameworkStores<ApplicationDbContext>();
+builder.Services.AddDefaultIdentity<IdentityUser>(options =>
+{
+    options.SignIn.RequireConfirmedAccount = true;
+})
+.AddEntityFrameworkStores<ApplicationDbContext>();
+
 builder.Services.AddControllersWithViews();
+
 builder.Services.AddDistributedMemoryCache();
 
 builder.Services.AddSession(options =>
@@ -24,6 +51,7 @@ builder.Services.AddSession(options =>
 
 var app = builder.Build();
 
+// Apply migrations and seed demo data on startup.
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
@@ -41,20 +69,23 @@ if (app.Environment.IsDevelopment())
 else
 {
     app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
+
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseRouting();
+
 app.UseSession();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
+
 app.MapRazorPages();
 
 app.Run();
