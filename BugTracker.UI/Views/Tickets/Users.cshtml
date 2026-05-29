@@ -24,6 +24,54 @@
             person_profiles: 'identified_only', // or 'always' to create profiles for anonymous users as well
         })
     </script>
+    <script>
+        (function () {
+            function capture(name, props = {}) {
+                if (!window.posthog) return;
+
+                posthog.capture(name, {
+                    app: "BugTracker",
+                    path: window.location.pathname,
+                    title: document.title,
+                    referrer: document.referrer || null,
+                    viewport: `${window.innerWidth}x${window.innerHeight}`,
+                    ...props
+                });
+            }
+
+            document.addEventListener("DOMContentLoaded", function () {
+                capture("bt_page_ready");
+            });
+
+            document.addEventListener("click", function (e) {
+                const el = e.target.closest("[data-ph], a, button");
+
+                if (!el) return;
+
+                capture(el.dataset.ph || "bt_click", {
+                    text: (el.innerText || el.getAttribute("aria-label") || "").trim().slice(0, 100),
+                    href: el.href || null,
+                    id: el.id || null,
+                    classes: el.className || null
+                });
+            }, true);
+
+            document.addEventListener("submit", function (e) {
+                capture("bt_form_submit", {
+                    formId: e.target.id || null,
+                    action: e.target.action || null
+                });
+            }, true);
+
+            window.addEventListener("error", function (e) {
+                capture("bt_js_error", {
+                    message: e.message,
+                    source: e.filename,
+                    line: e.lineno
+                });
+            });
+        })();
+    </script>
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
